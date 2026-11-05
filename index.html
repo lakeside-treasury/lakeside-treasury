@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lakeside Treasury</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a treasurer's ledger desk. Quiet lake-blue chrome, memo-style brief, dense tables with severity color only where attention is needed. */
+:root {
+  --paper: #f6f8f9;
+  --surface: #ffffff;
+  --ink: #15232b;
+  --muted: #5b6b74;
+  --line: #d9e1e5;
+  --lake: #1f5f7a;
+  --lake-soft: #e3eef3;
+  --good: #2f7d4f; --good-bg: #e4f2e9;
+  --warn: #9a6400; --warn-bg: #fbf0d9;
+  --bad: #b23a3a; --bad-bg: #f8e3e1;
+  --info-bg: #eef1f3;
+  --font-display: "Newsreader", Georgia, "Times New Roman", serif;
+  --font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --radius: 8px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f171b; --surface: #162127; --ink: #e4ecef; --muted: #93a4ad; --line: #2a3a42;
+    --lake: #7cbad3; --lake-soft: #1c3440;
+    --good: #7fcf9c; --good-bg: #173226; --warn: #e6b65c; --warn-bg: #3a2c12; --bad: #f08c84; --bad-bg: #3d1d1c; --info-bg: #1d2a31;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f171b; --surface: #162127; --ink: #e4ecef; --muted: #93a4ad; --line: #2a3a42;
+  --lake: #7cbad3; --lake-soft: #1c3440;
+  --good: #7fcf9c; --good-bg: #173226; --warn: #e6b65c; --warn-bg: #3a2c12; --bad: #f08c84; --bad-bg: #3d1d1c; --info-bg: #1d2a31;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--paper); color: var(--ink); font: 15px/1.5 var(--font-body); }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; text-wrap: balance; margin: 0; line-height: 1.2; }
+h1 { font-size: 1.6rem; }
+h2 { font-size: 1.3rem; }
+h3 { font-size: 1.05rem; font-family: var(--font-body); font-weight: 650; letter-spacing: .01em; }
+p { margin: 0; }
+.num, td.n, th.n { font-variant-numeric: tabular-nums; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); padding: .45rem .85rem; font-weight: 550; }
+button:hover { border-color: var(--lake); }
+button.primary { background: var(--lake); border-color: var(--lake); color: var(--surface); }
+button.primary:hover { filter: brightness(1.08); }
+button.ghost { background: transparent; border-color: transparent; color: var(--lake); padding-inline: .5rem; }
+button.danger { color: var(--bad); }
+button:disabled { opacity: .55; cursor: not-allowed; }
+:focus-visible { outline: 2px solid var(--lake); outline-offset: 2px; }
+input[type=password], input[type=text], select, textarea { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: .5rem .65rem; width: 100%; }
+textarea { min-height: 7rem; resize: vertical; line-height: 1.5; }
+label { font-weight: 600; font-size: .9rem; display: block; margin-bottom: .3rem; }
+.hint { color: var(--muted); font-size: .88rem; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
+
+/* top bar */
+header.top { background: var(--surface); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5; }
+header.top .wrap { display: flex; align-items: center; gap: 16px; min-height: 56px; flex-wrap: wrap; }
+.brand { display: flex; align-items: baseline; gap: 10px; margin-right: auto; }
+.brand b { font-family: var(--font-display); font-size: 1.25rem; font-weight: 600; }
+.brand span { color: var(--muted); font-size: .85rem; }
+nav.tabs { display: flex; gap: 2px; flex-wrap: wrap; }
+nav.tabs a { color: var(--muted); text-decoration: none; padding: .45rem .75rem; border-radius: 6px; font-weight: 600; font-size: .92rem; }
+nav.tabs a[aria-current="page"] { color: var(--lake); background: var(--lake-soft); }
+nav.tabs a:hover { color: var(--ink); }
+.lockpill { display: inline-flex; align-items: center; gap: 6px; font-size: .82rem; color: var(--muted); }
+.lockpill i { width: 8px; height: 8px; border-radius: 50%; background: var(--good); display: inline-block; }
+.banner { padding: .6rem .9rem; border-radius: var(--radius); font-size: .9rem; display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; }
+.banner.warn { background: var(--warn-bg); color: var(--ink); border-left: 4px solid var(--warn); }
+.banner.info { background: var(--info-bg); border-left: 4px solid var(--lake); }
+.banner.bad { background: var(--bad-bg); border-left: 4px solid var(--bad); }
+
+main { padding: 24px 0 64px; }
+.stack { display: flex; flex-direction: column; gap: 16px; }
+.row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.spread { justify-content: space-between; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
+.hidden { display: none !important; }
+
+/* lock screen */
+.gate { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; }
+.gate .card { width: min(440px, 100%); display: flex; flex-direction: column; gap: 14px; }
+.gate h1 { font-size: 1.8rem; }
+.gate .sub { color: var(--muted); }
+.check { display: flex; gap: 10px; align-items: flex-start; font-weight: 500; }
+.check input { width: auto; margin-top: 4px; }
+.err.note { color: var(--ink); background: var(--info-bg); padding: .5rem .65rem; border-radius: 6px; }
+.err { color: var(--bad); font-size: .9rem; min-height: 1.2em; }
+.meter { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.meter i { display: block; height: 100%; width: 0; background: var(--bad); transition: width .2s; }
+
+/* brief */
+.brief-head { display: flex; gap: 12px; align-items: end; flex-wrap: wrap; }
+.brief-head .field { min-width: 220px; }
+.memo { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 28px clamp(18px, 4vw, 40px); display: flex; flex-direction: column; gap: 26px; }
+.memo-title { display: flex; flex-direction: column; gap: 4px; border-bottom: 1px solid var(--line); padding-bottom: 16px; }
+.eyebrow { font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 650; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.kpi { border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+.kpi .k { font-size: .82rem; color: var(--muted); font-weight: 600; }
+.kpi .v { font-size: 1.45rem; font-weight: 650; font-variant-numeric: tabular-nums; }
+.kpi .s { font-size: .84rem; color: var(--muted); }
+.neg { color: var(--bad); }
+.pos { color: var(--good); }
+.pace { display: grid; gap: 10px; }
+.pace-row { display: grid; grid-template-columns: 120px 1fr 64px; gap: 12px; align-items: center; font-size: .9rem; }
+.pace-track { position: relative; height: 12px; background: var(--info-bg); border-radius: 6px; }
+.pace-track b { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 6px; background: var(--lake); max-width: 100%; }
+.pace-track b.over { background: var(--bad); }
+.pace-track u { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--ink); text-decoration: none; }
+.pace-track s { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--muted); opacity: .6; text-decoration: none; }
+.pace-legend { font-size: .8rem; color: var(--muted); display: flex; gap: 16px; flex-wrap: wrap; }
+.pace-legend span::before { content: ""; display: inline-block; width: 2px; height: 10px; margin-right: 6px; vertical-align: -1px; background: var(--ink); }
+.pace-legend span.ly::before { background: var(--muted); }
+.section { display: flex; flex-direction: column; gap: 10px; }
+.watch { display: flex; flex-direction: column; gap: 8px; }
+.wi { display: grid; grid-template-columns: 4px 1fr auto; gap: 12px; align-items: start; padding: 10px 12px 10px 0; border: 1px solid var(--line); border-radius: var(--radius); }
+.wi::before { content: ""; align-self: stretch; border-radius: var(--radius) 0 0 var(--radius); background: var(--muted); }
+.wi.over::before { background: var(--bad); }
+.wi.ahead::before, .wi.behind::before { background: var(--warn); }
+.wi.unbudgeted::before { background: var(--lake); }
+.wi.met::before { background: var(--good); }
+.wi .t { font-weight: 650; }
+.wi .d { color: var(--muted); font-size: .9rem; }
+.chip { font-size: .74rem; font-weight: 700; padding: .15rem .5rem; border-radius: 999px; white-space: nowrap; background: var(--info-bg); color: var(--muted); }
+.chip.over { background: var(--bad-bg); color: var(--bad); }
+.chip.ahead, .chip.behind { background: var(--warn-bg); color: var(--warn); }
+.chip.met { background: var(--good-bg); color: var(--good); }
+.chip.unbudgeted { background: var(--lake-soft); color: var(--lake); }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+th, td { padding: .45rem .6rem; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+th { font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 650; }
+td.n, th.n { text-align: right; white-space: nowrap; }
+.movers td:first-child { width: 60%; }
+.checks li { margin-bottom: 4px; }
+.checks { margin: 0; padding-left: 1.1rem; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+.saved-note { font-size: .82rem; color: var(--muted); }
+
+/* statements */
+.drop { border: 2px dashed var(--line); border-radius: var(--radius); padding: 28px; text-align: center; background: var(--surface); display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.drop.over { border-color: var(--lake); background: var(--lake-soft); }
+.queue { display: flex; flex-direction: column; gap: 10px; }
+.qi { display: grid; grid-template-columns: 1fr auto; gap: 8px 16px; align-items: center; }
+.qi .meta { color: var(--muted); font-size: .88rem; }
+.qi ul { margin: 4px 0 0; padding-left: 1.1rem; font-size: .88rem; }
+.cov { display: grid; gap: 6px; }
+.cov-row { display: grid; grid-template-columns: 96px repeat(12, 1fr); gap: 4px; align-items: center; font-size: .8rem; }
+.cov-row span.m { height: 26px; border-radius: 4px; background: var(--info-bg); display: grid; place-items: center; color: var(--muted); font-weight: 600; }
+.cov-row span.m.have { background: var(--lake); color: var(--surface); }
+.cov-row span.m.warn { box-shadow: inset 0 -3px 0 var(--warn); }
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.tablewrap table th, .tablewrap table td { white-space: nowrap; }
+.ledger th.name, .ledger td.name { position: sticky; left: 0; background: var(--surface); z-index: 1; min-width: 240px; white-space: normal; }
+.ledger tr.sec td { background: var(--info-bg); font-weight: 700; }
+.ledger tr.sec td.name { background: var(--info-bg); }
+.ledger tr.tot td { font-weight: 700; border-top: 2px solid var(--ink); }
+.ledger td.c-over { background: var(--bad-bg); color: var(--bad); font-weight: 650; }
+.ledger td.c-ahead, .ledger td.c-behind { background: var(--warn-bg); color: var(--warn); font-weight: 650; }
+.ledger td.c-met { background: var(--good-bg); color: var(--good); font-weight: 650; }
+.ledger th.mo { border-left: 1px solid var(--line); text-align: center; }
+.ledger td.first { border-left: 1px solid var(--line); }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: .82rem; color: var(--muted); align-items: center; }
+.yeartabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.yeartabs button[aria-pressed="true"] { background: var(--lake-soft); border-color: var(--lake); color: var(--lake); }
+ol.steps { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 8px; }
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--paper); padding: .6rem 1rem; border-radius: 6px; font-size: .9rem; z-index: 20; max-width: calc(100% - 32px); }
+.inline-confirm { display: inline-flex; gap: 6px; align-items: center; font-size: .85rem; }
+@media (max-width: 600px) {
+  .pace-row { grid-template-columns: 90px 1fr 48px; }
+  .cov-row { grid-template-columns: 70px repeat(12, 1fr); font-size: .65rem; }
+  .qi { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+</head>
+<body>
+
+<!-- ======= LOCK / SETUP ======= -->
+<section id="gate" class="gate">
+  <div class="card" id="gateCard">
+    <div class="stack" style="gap:6px">
+      <span class="eyebrow">Lakeside Preschool</span>
+      <h1>Treasury</h1>
+    </div>
+
+    <form id="unlockForm" class="stack hidden" autocomplete="off">
+      <p class="sub">Enter the treasury passphrase to open the books. Everything is decrypted here, in your browser.</p>
+      <div><label for="unlockPass">Passphrase</label><input id="unlockPass" type="password" autocomplete="current-password" required></div>
+      <div class="err" id="unlockErr"></div>
+      <button class="primary" type="submit" id="unlockBtn">Unlock</button>
+      <div class="hint">Books: <span id="unlockRepo"></span> · <button type="button" class="ghost" id="forgetDevice">Use a different repository or token</button></div>
+    </form>
+
+    <form id="connectForm" class="stack hidden" autocomplete="off">
+      <p class="sub">Connect to the private GitHub repository that holds the encrypted books. The setup guide in the README explains where these come from.</p>
+      <div><label for="cRepo">Data repository</label><input id="cRepo" type="text" placeholder="lakeside-treasury/lakeside-treasury-data" spellcheck="false" autocapitalize="off" required></div>
+      <div><label for="cToken">GitHub access token</label><input id="cToken" type="password" placeholder="github_pat_…" spellcheck="false" autocomplete="off" required></div>
+      <div><label for="cPass">Treasury passphrase</label><input id="cPass" type="password" autocomplete="current-password" required>
+        <div class="meter hidden" id="cMeterWrap" style="margin-top:6px"><i id="setupMeter"></i></div></div>
+      <div id="cPass2Wrap" class="hidden"><label for="cPass2">Type the new passphrase again</label><input id="cPass2" type="password" autocomplete="new-password">
+        <div class="hint" style="margin-top:4px">At least 12 characters. Four or five unrelated words works well. It can't be recovered, so keep it with the school's important records.</div></div>
+      <label class="check"><input type="checkbox" id="cRemember" checked> <span>Remember the repository and token on this device (the token is kept encrypted with your passphrase)</span></label>
+      <div class="err" id="connectErr"></div>
+      <button class="primary" type="submit" id="connectBtn">Open the books</button>
+      <div id="cRestoreWrap" class="hint hidden">Moving from the Claude version or a backup? <button type="button" class="ghost" id="gateRestore">Start from an encrypted backup file</button></div>
+    </form>
+
+    <div id="restoreBox" class="stack hidden">
+      <p class="sub">Choose a <b>lakeside-vault</b> backup file and enter the passphrase it was made with. Its passphrase becomes the passphrase for these books.</p>
+      <div><label for="restoreFile">Backup file</label><input id="restoreFile" type="file" accept=".json,application/json"></div>
+      <div><label for="restorePass">Backup passphrase</label><input id="restorePass" type="password" autocomplete="off"></div>
+      <div class="err" id="restoreErr"></div>
+      <div class="row"><button class="primary" id="restoreBtn" type="button">Restore</button><button type="button" id="restoreCancel">Back</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- ======= APP ======= -->
+<div id="app" class="hidden">
+  <header class="top">
+    <div class="wrap">
+      <div class="brand"><b>Lakeside Treasury</b><span id="brandSub"></span></div>
+      <nav class="tabs" aria-label="Sections">
+        <a href="#brief" data-view="brief">Brief</a>
+        <a href="#statements" data-view="statements">Statements</a>
+        <a href="#ledger" data-view="ledger">Spreadsheet</a>
+        <a href="#handoff" data-view="handoff">Handoff &amp; security</a>
+      </nav>
+      <span class="lockpill"><i></i>Unlocked</span>
+      <button id="lockBtn" type="button">Lock</button>
+    </div>
+  </header>
+  <main class="wrap stack">
+    <div id="banners" class="stack"></div>
+
+    <!-- BRIEF -->
+    <section id="view-brief" class="stack" data-v="brief">
+      <div id="briefEmpty" class="card stack hidden">
+        <h2>No statements yet</h2>
+        <p>Add the monthly income statement PDFs from the bookkeeper. You can drop several at once; the brief and spreadsheet build themselves from them.</p>
+        <div><a href="#statements"><button class="primary" type="button" tabindex="-1">Add statements</button></a></div>
+      </div>
+      <div id="briefMain" class="stack">
+        <div class="brief-head">
+          <div class="field"><label for="briefPick">Statement</label><select id="briefPick"></select></div>
+          <div class="row" style="margin-left:auto">
+            <button type="button" id="copyBrief">Copy brief as text</button>
+            <button type="button" id="dlBrief">Download .txt</button>
+                      </div>
+        </div>
+        <article class="memo" id="memo"></article>
+      </div>
+    </section>
+
+    <!-- STATEMENTS -->
+    <section id="view-statements" class="stack hidden" data-v="statements">
+      <div class="row spread"><h1>Statements</h1></div>
+      <label class="drop" id="drop" for="fileIn">
+        <h3>Drop monthly statement PDFs here</h3>
+        <span class="hint">or click to choose files. Several at a time is fine. Files are read in your browser; only the encrypted figures are stored.</span>
+        <input id="fileIn" type="file" accept="application/pdf,.pdf" multiple class="hidden">
+      </label>
+      <div id="queueWrap" class="stack hidden">
+        <div class="row spread"><h2>Ready to save</h2><div class="row"><button type="button" id="discardAll">Discard all</button><button type="button" class="primary" id="saveAll">Save all</button></div></div>
+        <div class="queue" id="queue"></div>
+      </div>
+      <div class="card stack">
+        <div class="row spread"><h2>Coverage</h2><span class="hint">Each box is a month-end statement, July to June.</span></div>
+        <div class="cov" id="coverage"></div>
+      </div>
+      <div class="stack">
+        <h2>Saved statements</h2>
+        <div class="tablewrap"><table id="savedTable"></table></div>
+      </div>
+    </section>
+
+    <!-- LEDGER -->
+    <section id="view-ledger" class="stack hidden" data-v="ledger">
+      <div class="row spread"><h1>Running spreadsheet</h1>
+        <div class="row"><button type="button" id="dlXlsx" class="primary">Download Excel workbook</button><button type="button" id="copyCsv">Copy as CSV</button></div></div>
+      <div class="yeartabs" id="yearTabs" role="group" aria-label="Fiscal year"></div>
+      <div class="legend">
+        <span class="chip over">Over budget</span><span class="chip ahead">Ahead of / behind pace</span><span class="chip met">Income budget met</span>
+        <span>Each month shows YTD actual, % of annual budget, and change since the prior statement. Pace compares against the same point last year when available.</span>
+      </div>
+      <div class="tablewrap"><table class="ledger" id="ledgerTable"></table></div>
+    </section>
+
+    <!-- HANDOFF -->
+    <section id="view-handoff" class="stack hidden" data-v="handoff">
+      <h1>Handoff &amp; security</h1>
+      <div class="two">
+        <div class="card stack">
+          <h2>Handing over to a new treasurer</h2>
+          <ol class="steps">
+            <li>The new treasurer makes a free GitHub account, and you invite them to the treasury organization as an <b>Owner</b> (GitHub → the organization → People → Invite member).</li>
+            <li>They create their own access token for the data repository (README, step 3) and open this page on their computer.</li>
+            <li>Give them the passphrase in person or by phone, never in the same message as anything else.</li>
+            <li>Once they're in, have them change the passphrase below to one only they know.</li>
+            <li>Then remove yourself from the organization, and delete your own access token on GitHub.</li>
+          </ol>
+          <h3>Monthly routine</h3>
+          <ol class="steps">
+            <li>When the bookkeeper's statement arrives, open <b>Statements</b> and drop in the PDF.</li>
+            <li>Check any data warnings, then save.</li>
+            <li>Read the <b>Brief</b>, add your notes, and copy it into the board email.</li>
+            <li>Download the Excel workbook if the board wants the spreadsheet.</li>
+            <li>When GitHub emails that your token is about to expire, make a new one and choose "Use a different repository or token" on the unlock screen.</li>
+          </ol>
+        </div>
+        <div class="stack">
+          <div class="card stack">
+            <h2>Change passphrase</h2>
+            <p class="hint">Re-encrypts every statement with the new passphrase. Takes a few seconds.</p>
+            <div><label for="cpOld">Current passphrase</label><input id="cpOld" type="password" autocomplete="current-password"></div>
+            <div><label for="cpNew">New passphrase</label><input id="cpNew" type="password" autocomplete="new-password"></div>
+            <div><label for="cpNew2">Type it again</label><input id="cpNew2" type="password" autocomplete="new-password"></div>
+            <div class="err" id="cpErr"></div>
+            <div><button type="button" class="primary" id="cpBtn">Change passphrase</button></div>
+          </div>
+          <div class="card stack">
+            <h2>Encrypted backup</h2>
+            <p class="hint">A single file holding every statement, note and summary, still encrypted with the current passphrase. GitHub already keeps every version, but a yearly copy on the school's shared drive is cheap insurance.</p>
+            <div class="row"><button type="button" id="bkExport" class="primary">Download backup</button><button type="button" id="bkCopy">Copy backup text</button></div>
+            <div><label for="bkFile">Merge statements from a backup</label><input id="bkFile" type="file" accept=".json,application/json"></div>
+            <div><label for="bkPass">That backup's passphrase</label><input id="bkPass" type="password" autocomplete="off"></div>
+            <div class="err" id="bkErr"></div>
+            <div><button type="button" id="bkImport">Merge backup</button></div>
+          </div>
+        </div>
+      </div>
+      <div class="card stack">
+        <h2>How the data is protected</h2>
+        <ul class="checks">
+          <li>Each statement is encrypted in your browser with AES-256-GCM before it is sent to GitHub. The key comes from the passphrase (PBKDF2-SHA-256, 600,000 rounds) and is never stored or sent anywhere.</li>
+          <li>The private repository holds only ciphertext, plus the month each file covers (for example <code>statements/2025-09.json</code>) and the commit history of when things were saved.</li>
+          <li>Your GitHub token is stored on this device only if you ticked "Remember", and then only encrypted with the passphrase. Locking the page clears it from memory.</li>
+          <li>The page locks itself after 20 minutes without activity, and whenever it's closed.</li>
+          <li>The app's code is public; the books are not. Nothing in the code is secret.</li>
+          <li>A forgotten passphrase can't be reset. Keep a backup and keep the passphrase with the school's important records.</li>
+        </ul>
+        <p class="hint" id="storageInfo"></p>
+      </div>
+    </section>
+  </main>
+</div>
+<div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+<script>
+/* Lakeside core: statement parsing, analysis and brief generation. Pure functions, no DOM. */
+const LakesideCore = (() => {
+  const MONTHS = ['january','february','march','april','may','june','july','august','september','october','november','december'];
+  const MON_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const NUM_RE = /^\(?-?\$?(\d{1,3}(,\d{3})+|\d+)(\.\d+)?\)?$/;
+
+  const isNum = (s) => NUM_RE.test(s);
+  function toNum(s) {
+    const neg = /^\(.*\)$/.test(s) || s.startsWith('-') || s.startsWith('(-');
+    const v = Number(s.replace(/[(),$\-]/g, ''));
+    return neg ? -v : v;
+  }
+  const pad = (n) => String(n).padStart(2, '0');
+  const iso = (y, m, d) => `${y}-${pad(m)}-${pad(d)}`;
+  const fyOf = (y, m) => (m >= 7 ? `${y}-${y + 1}` : `${y - 1}-${y}`);
+  const fyMonthOf = (m) => ((m - 7 + 12) % 12) + 1;
+
+  // Split items into word tokens with estimated x-extents (pdf.js items are usually one run each).
+  function tokenize(items) {
+    const toks = [];
+    for (const it of items) {
+      const raw = it.str || '';
+      if (!raw.trim()) continue;
+      const len = raw.length || 1;
+      const re = /\S+/g; let m;
+      while ((m = re.exec(raw))) {
+        const x0 = it.x + (it.w * m.index) / len;
+        const x1 = it.x + (it.w * (m.index + m[0].length)) / len;
+        toks.push({ s: m[0], x0, x1, y: it.y, page: it.page || 0 });
+      }
+    }
+    return toks;
+  }
+
+  function groupLines(items) {
+    const toks = tokenize(items).sort((a, b) => a.page - b.page || b.y - a.y || a.x0 - b.x0);
+    const lines = [];
+    for (const t of toks) {
+      const last = lines[lines.length - 1];
+      if (last && last.page === t.page && Math.abs(last.y - t.y) < 3) last.toks.push(t);
+      else lines.push({ page: t.page, y: t.y, toks: [t] });
+    }
+    for (const l of lines) {
+      l.toks.sort((a, b) => a.x0 - b.x0);
+      l.text = l.toks.map((t) => t.s).join(' ');
+      // trailing numeric run = values; the rest = label
+      let i = l.toks.length;
+      while (i > 0 && isNum(l.toks[i - 1].s)) i--;
+      l.label = l.toks.slice(0, i).map((t) => t.s).join(' ').trim();
+      l.nums = l.toks.slice(i).map((t) => ({ v: toNum(t.s), r: t.x1 }));
+    }
+    return lines;
+  }
+
+  function parseDateWords(s) {
+    const m = s.match(/(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{1,2}),\s*(\d{4})/i);
+    if (!m) return null;
+    return iso(+m[3], MONTHS.indexOf(m[1].toLowerCase()) + 1, +m[2]);
+  }
+  function parseSlashDate(s) {
+    const m = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+    if (!m) return null;
+    let y = +m[3]; if (y < 100) y += 2000;
+    return iso(y, +m[1], +m[2]);
+  }
+
+  function median(a) { const s = [...a].sort((x, y) => x - y); return s.length ? s[Math.floor(s.length / 2)] : null; }
+
+  const FIELDS = ['actual', 'budget', 'variance', 'priorActual', 'priorBudget'];
+
+  function parseStatement(items, fileName = '') {
+    const lines = groupLines(items);
+    const warnings = [];
+    const st = {
+      income: [], expense: [], totals: {}, nonOp: { years: [], rows: [], total: null }, banks: [],
+      header: {}, source: { fileName },
+    };
+
+    // Column right edges from 5-value lines
+    const five = lines.filter((l) => l.nums.length === 5 && l.label);
+    const cols = five.length ? [0, 1, 2, 3, 4].map((i) => median(five.map((l) => l.nums[i].r))) : null;
+    const assign = (nums, n = 5) => {
+      const out = new Array(n).fill(null);
+      if (nums.length === n || !cols) { nums.slice(0, n).forEach((x, i) => (out[i] = x.v)); return out; }
+      for (const x of nums) {
+        let best = 0, bd = Infinity;
+        cols.forEach((c, i) => { const d = Math.abs(c - x.r); if (d < bd) { bd = d; best = i; } });
+        if (out[best] === null) out[best] = x.v; else { const free = out.indexOf(null); if (free >= 0) out[free] = x.v; }
+      }
+      return out;
+    };
+    const toRow = (name, nums) => { const v = assign(nums); const r = { name }; FIELDS.forEach((f, i) => (r[f] = v[i])); return r; };
+
+    let section = 'header';
+    let bankIdx = -1;
+    const headerText = [];
+    for (let li = 0; li < lines.length; li++) {
+      const l = lines[li];
+      const label = l.label;
+      const text = l.text;
+      if (/^Operating Income$/i.test(text)) { section = 'income'; continue; }
+      if (/^Operating Expenses$/i.test(text)) { section = 'expense'; continue; }
+      if (/Bank Accounts as of/i.test(text)) {
+        bankIdx++; section = 'bank';
+        st.banks[bankIdx] = { asOf: parseSlashDate(text), accounts: [] };
+        continue;
+      }
+      if (/^Non-Operating Items/i.test(text)) {
+        section = 'nonop';
+        st.nonOp.years = (text.match(/\d{4}-\d{4}/g) || []);
+        continue;
+      }
+      if (section === 'header') { headerText.push(text); continue; }
+      if (/^Total Income/i.test(label)) { st.totals.income = toRow('Total Income', l.nums); continue; }
+      if (/^Total Expenses/i.test(label)) { st.totals.expense = toRow('Total Expenses', l.nums); section = 'afterExpense'; continue; }
+      if (/^Net Operating Income/i.test(label)) { st.totals.net = toRow('Net Operating Income (Loss)', l.nums); continue; }
+      if (/^Non-Operating Income/i.test(label)) { st.nonOp.total = { name: label, values: assign(l.nums) }; section = 'afterNonop'; continue; }
+      if (section === 'income' || section === 'expense') {
+        if (!label) continue;
+        st[section].push(toRow(label, l.nums));
+        continue;
+      }
+      if (section === 'nonop' && label && l.nums.length) { st.nonOp.rows.push({ name: label, values: assign(l.nums) }); continue; }
+      if (section === 'bank' && label && l.nums.length) { st.banks[bankIdx].accounts.push({ name: label, value: l.nums[l.nums.length - 1].v }); continue; }
+    }
+
+    // Header facts
+    const ht = headerText.join('\n');
+    const endIdx = headerText.findIndex((t) => /Months? Ending/i.test(t));
+    st.header.monthsText = endIdx >= 0 ? headerText[endIdx] : '';
+    st.header.date = parseDateWords(endIdx >= 0 ? headerText.slice(endIdx, endIdx + 2).join(' ') : ht);
+    const fys = ht.match(/\d{4}-\d{4}(?= Budget)/g) || [];
+    st.header.fy = fys[0] || null;
+    st.header.priorFy = fys[1] || null;
+
+    // Period end: bank date is the most reliable; then header; then file name
+    let periodEnd = st.banks[0] && st.banks[0].asOf;
+    const fnm = fileName.match(/(\d{2})_(\d{2})_(\d{2,4})/);
+    const fileDate = fnm ? iso(+fnm[3] < 100 ? 2000 + +fnm[3] : +fnm[3], +fnm[1], +fnm[2]) : null;
+    if (!periodEnd) periodEnd = st.header.date || fileDate;
+    if (!periodEnd) throw new Error('Could not find the statement date. Is this a Lakeside income statement?');
+    const [py, pm] = periodEnd.split('-').map(Number);
+    st.periodEnd = periodEnd;
+    st.id = `${py}-${pad(pm)}`;
+    st.fy = fyOf(py, pm);
+    st.fyMonth = fyMonthOf(pm);
+
+    if (st.header.date && st.header.date !== periodEnd) {
+      warnings.push({ level: 'warn', code: 'header-date', msg: `The statement heading says ${fmtDate(st.header.date)}, but the bank balances and numbers are as of ${fmtDate(periodEnd)}. The heading looks stale; using ${fmtDate(periodEnd)}.` });
+    }
+    if (st.header.fy && st.header.fy !== st.fy) {
+      warnings.push({ level: 'warn', code: 'fy', msg: `Budget column is labelled ${st.header.fy}, but ${fmtDate(periodEnd)} falls in fiscal year ${st.fy}.` });
+    }
+    if (fileDate && fileDate !== periodEnd) {
+      warnings.push({ level: 'info', code: 'file-date', msg: `File name suggests ${fmtDate(fileDate)}; statement content is ${fmtDate(periodEnd)}.` });
+    }
+    if (!st.income.length || !st.expense.length || !st.totals.income || !st.totals.expense) {
+      throw new Error('This PDF does not look like a Lakeside income statement (could not find the income and expense sections).');
+    }
+
+    // Arithmetic checks
+    const sum = (rows, f) => rows.reduce((a, r) => a + (r[f] || 0), 0);
+    const tol = (n) => Math.max(3, Math.ceil(n * 0.6));
+    for (const [sec, tot, lbl] of [['income', 'income', 'Total Income'], ['expense', 'expense', 'Total Expenses']]) {
+      for (const f of ['actual', 'budget']) {
+        const s = sum(st[sec], f), t = st.totals[tot][f];
+        if (t != null && Math.abs(s - t) > tol(st[sec].length)) warnings.push({ level: 'warn', code: 'sum', msg: `${lbl} (${f === 'actual' ? 'YTD actual' : 'budget'}) is ${money(t)}, but the lines add up to ${money(s)}.` });
+      }
+    }
+    if (st.totals.net && st.totals.net.actual != null) {
+      const calc = st.totals.income.actual - st.totals.expense.actual;
+      if (Math.abs(calc - st.totals.net.actual) > 3) warnings.push({ level: 'warn', code: 'net', msg: `Net operating income is shown as ${money(st.totals.net.actual)}, but income minus expenses is ${money(calc)}.` });
+    }
+    for (const r of [...st.income, ...st.expense]) {
+      if (r.actual != null && r.budget != null && r.variance != null && Math.abs(r.actual - r.budget - r.variance) > 2) {
+        warnings.push({ level: 'info', code: 'variance', msg: `${r.name}: variance column (${money(r.variance)}) doesn't equal actual minus budget (${money(r.actual - r.budget)}).` });
+      }
+    }
+    st.warnings = warnings;
+    return st;
+  }
+
+  // ---------- formatting ----------
+  function money(v, opts = {}) {
+    if (v == null || Number.isNaN(v)) return '—';
+    const s = Math.abs(Math.round(v)).toLocaleString('en-US');
+    const sign = v < 0 ? '−' : (opts.plus && v > 0 ? '+' : '');
+    return `${sign}$${s}`;
+  }
+  const pct = (v, d = 0) => (v == null || !isFinite(v) ? '—' : `${(v * 100).toFixed(d)}%`);
+  function fmtDate(isoStr, style = 'long') {
+    if (!isoStr) return '—';
+    const [y, m, d] = isoStr.split('-').map(Number);
+    if (style === 'short') return `${m}/${d}/${String(y).slice(2)}`;
+    if (style === 'month') return `${MON_SHORT[m - 1]} ${y}`;
+    return `${MONTHS[m - 1][0].toUpperCase()}${MONTHS[m - 1].slice(1)} ${d}, ${y}`;
+  }
+
+  // ---------- analysis ----------
+  const byPeriod = (a, b) => a.periodEnd.localeCompare(b.periodEnd);
+  function prevStatement(all, s) {
+    return all.find((x) => x.fy === s.fy && x.fyMonth === s.fyMonth - 1) || null;
+  }
+  function priorStatementAny(all, s) {
+    const earlier = all.filter((x) => x.periodEnd < s.periodEnd).sort(byPeriod);
+    return earlier[earlier.length - 1] || null;
+  }
+  const bankTotal = (b) => (b ? b.accounts.reduce((a, x) => a + (x.value || 0), 0) : null);
+
+  // Contra-income lines (negative budget, e.g. tuition remission) behave like costs.
+  function lineKind(sec, r) {
+    if (sec === 'expense') return 'cost';
+    if ((r.budget || 0) < 0 || (r.budget === 0 && (r.actual || 0) < 0)) return 'contra';
+    return 'income';
+  }
+
+  function assessLine(sec, r, fyMonth) {
+    const pace = fyMonth / 12;
+    const kind = lineKind(sec, r);
+    const a = r.actual || 0, b = r.budget || 0;
+    const res = { kind, pace, pctBudget: b ? a / b : null, lyPct: null, expected: pace, status: 'ok', note: '', impact: 0 };
+    if (r.priorBudget && r.priorActual != null) {
+      const ly = r.priorActual / r.priorBudget;
+      if (isFinite(ly) && ly >= 0 && ly <= 1.6) { res.lyPct = ly; res.expected = ly; }
+    }
+    if (!b) {
+      if (Math.abs(a) >= 250) {
+        res.status = 'unbudgeted';
+        res.impact = Math.abs(a);
+        res.note = kind === 'income' ? `${money(a)} received with no budget line.` : `${money(Math.abs(a))} spent with no budget.`;
+      }
+      return res;
+    }
+    const p = res.pctBudget;
+    const expectedAmt = res.expected * b;
+    const gap = a - expectedAmt; // positive => more than expected
+    const basis = res.lyPct != null ? `last year at this point was ${pct(res.lyPct)}` : `${pct(pace)} of the year has passed`;
+    if (kind === 'income') {
+      if (p >= 1) { res.status = 'met'; res.note = `Already at ${pct(p)} of the annual budget.`; res.impact = a - b; }
+      else if (res.expected - p > 0.15 && -gap >= 1000) { res.status = 'behind'; res.impact = -gap; res.note = `At ${pct(p)} of budget; ${basis}. About ${money(-gap)} behind that pace.`; }
+    } else {
+      const absA = Math.abs(a), absB = Math.abs(b), absGap = Math.abs(a) - Math.abs(expectedAmt);
+      if (absA > absB && absA - absB >= 250) { res.status = 'over'; res.impact = absA - absB; res.note = `${money(absA - absB)} over the annual budget of ${money(absB)} (${pct(p)}).`; }
+      else if (p - res.expected > 0.15 && absGap >= 500) { res.status = 'ahead'; res.impact = absGap; res.note = `At ${pct(p)} of budget; ${basis}. About ${money(absGap)} ahead of that pace.`; }
+    }
+    return res;
+  }
+
+  function monthlyActivity(s, prev) {
+    const map = {};
+    if (!prev && s.fyMonth !== 1) return null;
+    for (const sec of ['income', 'expense']) {
+      for (const r of s[sec]) {
+        const p = prev ? (prev[sec].find((x) => x.name === r.name) || {}).actual || 0 : 0;
+        map[`${sec}:${r.name}`] = (r.actual || 0) - p;
+      }
+    }
+    return map;
+  }
+
+  function buildBrief(s, all) {
+    const prev = prevStatement(all, s);
+    const lastAny = priorStatementAny(all, s);
+    const pace = s.fyMonth / 12;
+    const T = s.totals;
+    const brief = { id: s.id, title: `Budget brief — ${fmtDate(s.periodEnd)}`, period: s.periodEnd, fy: s.fy, fyMonth: s.fyMonth, pace };
+
+    // Headline
+    const inc = T.income, exp = T.expense, net = T.net || { actual: inc.actual - exp.actual, budget: inc.budget - exp.budget, priorActual: (inc.priorActual || 0) - (exp.priorActual || 0) };
+    brief.headline = {
+      income: { actual: inc.actual, budget: inc.budget, pct: inc.budget ? inc.actual / inc.budget : null, lastYear: inc.priorActual, lyPct: inc.priorBudget ? inc.priorActual / inc.priorBudget : null },
+      expense: { actual: exp.actual, budget: exp.budget, pct: exp.budget ? exp.actual / exp.budget : null, lastYear: exp.priorActual, lyPct: exp.priorBudget ? exp.priorActual / exp.priorBudget : null },
+      net: { actual: net.actual, budget: net.budget, lastYear: net.priorActual },
+    };
+
+    // Month activity
+    const act = monthlyActivity(s, prev);
+    brief.monthly = null;
+    if (act) {
+      const incM = s.income.reduce((a, r) => a + act[`income:${r.name}`], 0);
+      const expM = s.expense.reduce((a, r) => a + act[`expense:${r.name}`], 0);
+      const movers = Object.entries(act).filter(([, v]) => Math.abs(v) >= 1).map(([k, v]) => { const [sec, ...n] = k.split(':'); return { sec, name: n.join(':'), value: v }; })
+        .sort((a, b) => Math.abs(b.value) - Math.abs(a.value)).slice(0, 6);
+      brief.monthly = { income: incM, expense: expM, net: incM - expM, movers, basis: prev ? prev.periodEnd : null };
+    }
+
+    // Watch list
+    const watch = [], good = [];
+    for (const sec of ['income', 'expense']) {
+      for (const r of s[sec]) {
+        const a = assessLine(sec, r, s.fyMonth);
+        const item = { sec, name: r.name, actual: r.actual, budget: r.budget, ...a };
+        if (a.status === 'unbudgeted' && a.kind === 'income') good.push(item);
+        else if (['over', 'ahead', 'behind', 'unbudgeted'].includes(a.status)) watch.push(item);
+        else if (a.status === 'met') good.push(item);
+      }
+    }
+    const sevRank = { over: 0, behind: 1, ahead: 2, unbudgeted: 3 };
+    watch.sort((a, b) => sevRank[a.status] - sevRank[b.status] || b.impact - a.impact);
+    brief.watch = watch;
+    brief.good = good;
+
+    // Cash
+    const nowB = s.banks[0], yearAgoB = s.banks[1];
+    const prevB = lastAny && lastAny.banks[0];
+    brief.cash = {
+      asOf: nowB ? nowB.asOf : null,
+      total: bankTotal(nowB),
+      prevTotal: bankTotal(prevB), prevAsOf: prevB ? prevB.asOf : null,
+      yearAgoTotal: bankTotal(yearAgoB), yearAgoAsOf: yearAgoB ? yearAgoB.asOf : null,
+      accounts: (nowB ? nowB.accounts : []).map((acc) => ({
+        name: acc.name, value: acc.value,
+        prev: prevB ? ((prevB.accounts.find((x) => x.name === acc.name) || {}).value ?? null) : null,
+        yearAgo: yearAgoB ? ((yearAgoB.accounts.find((x) => x.name === acc.name) || {}).value ?? null) : null,
+      })),
+    };
+
+    // Non-operating (current FY column)
+    const ci = s.nonOp.years.indexOf(s.fy);
+    const col = ci >= 0 ? ci : 0;
+    brief.nonOp = s.nonOp.rows.filter((r) => r.values[col]).map((r) => ({ name: r.name, value: r.values[col] }));
+
+    // Checks
+    const checks = [...(s.warnings || [])];
+    if (s.fyMonth > 1 && !prev) checks.push({ level: 'info', code: 'gap', msg: `No statement saved for the previous month, so month-only figures can't be calculated. Add it to see this month's activity.` });
+    if (prev) {
+      const changed = [];
+      for (const sec of ['income', 'expense']) for (const r of s[sec]) {
+        const p = prev[sec].find((x) => x.name === r.name);
+        if (p && p.budget != null && r.budget != null && p.budget !== r.budget) changed.push(`${r.name} ${money(p.budget)} → ${money(r.budget)}`);
+        if (!p) checks.push({ level: 'info', code: 'newline', msg: `New line on this statement: ${r.name}.` });
+      }
+      if (changed.length) checks.push({ level: 'info', code: 'budget-change', msg: `Budget figures changed since last month: ${changed.join('; ')}.` });
+    }
+    brief.checks = checks;
+    return brief;
+  }
+
+  function briefToText(s, b) {
+    const L = [];
+    const h = b.headline;
+    L.push(`LAKESIDE PRESCHOOL — BUDGET BRIEF`);
+    L.push(`Through ${fmtDate(s.periodEnd)} · Fiscal year ${s.fy}, month ${s.fyMonth} of 12 (${pct(b.pace)} of the year)`);
+    L.push('');
+    L.push(`HEADLINE`);
+    L.push(`• Net operating income year-to-date: ${money(h.net.actual)} (annual budget ${money(h.net.budget)}; same point last year ${money(h.net.lastYear)}).`);
+    L.push(`• Income: ${money(h.income.actual)}, ${pct(h.income.pct)} of the ${money(h.income.budget)} budget${h.income.lyPct != null ? ` (last year at this point: ${pct(h.income.lyPct)})` : ''}.`);
+    L.push(`• Expenses: ${money(h.expense.actual)}, ${pct(h.expense.pct)} of the ${money(h.expense.budget)} budget${h.expense.lyPct != null ? ` (last year at this point: ${pct(h.expense.lyPct)})` : ''}.`);
+    if (b.cash.total != null) L.push(`• Cash across accounts: ${money(b.cash.total)}${b.cash.prevTotal != null ? ` (${money(b.cash.total - b.cash.prevTotal, { plus: true })} since ${fmtDate(b.cash.prevAsOf, 'short')})` : ''}${b.cash.yearAgoTotal != null ? `; a year ago ${money(b.cash.yearAgoTotal)}` : ''}.`);
+    L.push('');
+    if (b.monthly) {
+      L.push(`THIS MONTH`);
+      L.push(`• Income ${money(b.monthly.income)}, expenses ${money(b.monthly.expense)}, net ${money(b.monthly.net, { plus: true })}.`);
+      for (const m of b.monthly.movers) L.push(`  – ${m.name}: ${money(m.value, { plus: true })}`);
+      L.push('');
+    }
+    L.push(`WATCH LIST`);
+    if (!b.watch.length) L.push('• Nothing outside the expected range.');
+    for (const w of b.watch) L.push(`• ${w.name} [${STATUS_LABEL[w.status]}]: ${w.note}`);
+    if (b.good.length) { L.push(''); L.push('INCOME AT OR ABOVE BUDGET'); for (const g of b.good) L.push(`• ${g.name}: ${g.note}`); }
+    L.push('');
+    L.push(`CASH BY ACCOUNT (as of ${fmtDate(b.cash.asOf, 'short')})`);
+    for (const a of b.cash.accounts) L.push(`• ${a.name}: ${money(a.value)}${a.prev != null ? (a.value === a.prev ? ' (no change)' : ` (${money(a.value - a.prev, { plus: true })} vs last report)`) : ''}`);
+    if (b.nonOp.length) { L.push(''); L.push(`NON-OPERATING (${s.fy})`); for (const n of b.nonOp) L.push(`• ${n.name}: ${money(n.value)}`); }
+    if (s.narrative) { L.push(''); L.push('SUMMARY'); L.push(s.narrative.trim()); }
+    if (s.notes) { L.push(''); L.push('TREASURER NOTES'); L.push(s.notes.trim()); }
+    if (b.checks.length) { L.push(''); L.push('DATA CHECKS'); for (const c of b.checks) L.push(`• ${c.msg}`); }
+    return L.join('\n');
+  }
+
+  const STATUS_LABEL = { over: 'Over budget', ahead: 'Spending ahead of pace', behind: 'Behind pace', unbudgeted: 'Not budgeted', met: 'Budget met', ok: 'On track' };
+
+  // ---------- spreadsheet model ----------
+  function fiscalYears(all) { return [...new Set(all.map((s) => s.fy))].sort().reverse(); }
+  function yearModel(all, fy) {
+    const sts = all.filter((s) => s.fy === fy).sort(byPeriod);
+    const latest = sts[sts.length - 1];
+    const rows = { income: [], expense: [] };
+    for (const sec of ['income', 'expense']) {
+      const names = [];
+      for (const s of sts) for (const r of s[sec]) if (!names.includes(r.name)) names.push(r.name);
+      for (const name of names) {
+        const budget = latest ? ((latest[sec].find((x) => x.name === name) || {}).budget ?? null) : null;
+        const cells = sts.map((s, i) => {
+          const r = s[sec].find((x) => x.name === name);
+          const prevS = sts.find((x) => x.fyMonth === s.fyMonth - 1);
+          const pr = prevS ? prevS[sec].find((x) => x.name === name) : null;
+          const ytd = r ? r.actual : null;
+          const b = r ? r.budget : budget;
+          return { ytd, budget: b, pct: b ? (ytd || 0) / b : null, delta: s.fyMonth === 1 ? ytd : (prevS ? (ytd || 0) - ((pr && pr.actual) || 0) : null), assess: r ? assessLine(sec, r, s.fyMonth) : null };
+        });
+        rows[sec].push({ name, budget, cells });
+      }
+    }
+    const totals = ['income', 'expense', 'net'].map((k) => ({ key: k, cells: sts.map((s) => s.totals[k] || null) }));
+    const accounts = [];
+    for (const s of sts) for (const a of (s.banks[0] ? s.banks[0].accounts : [])) if (!accounts.includes(a.name)) accounts.push(a.name);
+    const banks = accounts.map((name) => ({ name, cells: sts.map((s) => { const a = s.banks[0] && s.banks[0].accounts.find((x) => x.name === name); return a ? a.value : null; }) }));
+    const nonOpNames = [];
+    for (const s of sts) for (const r of s.nonOp.rows) if (!nonOpNames.includes(r.name)) nonOpNames.push(r.name);
+    const nonOp = nonOpNames.map((name) => ({ name, cells: sts.map((s) => { const i = s.nonOp.years.indexOf(s.fy); const r = s.nonOp.rows.find((x) => x.name === name); return r ? r.values[i >= 0 ? i : 0] : null; }) }));
+    return { fy, statements: sts, rows, totals, banks, nonOp };
+  }
+
+  return { parseStatement, groupLines, buildBrief, briefToText, yearModel, fiscalYears, assessLine, money, pct, fmtDate, STATUS_LABEL, prevStatement, bankTotal, MON_SHORT };
+})();
+if (typeof module !== 'undefined') module.exports = LakesideCore;
+
+</script>
+<script>
+const C = LakesideCore;
+const $ = (id) => document.getElementById(id);
+const ITER = 600000;
+const CHECK = 'lakeside-vault-ok';
+const IDLE_MS = 20 * 60 * 1000;
+const App = { key: null, meta: null, statements: [], failed: [], store: null, canWrite: null, newVault: false, view: 'brief', briefId: null, ledgerFy: null, queue: [], idleTimer: null };
+
+// ---------- helpers ----------
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const money = C.money, pct = C.pct, fmtDate = C.fmtDate;
+const byPeriod = (a, b) => a.periodEnd.localeCompare(b.periodEnd);
+const fyLabel = (fy) => fy ? fy.replace('-', '–') : '';
+function toast(msg, ms = 3200) { const t = $('toast'); t.textContent = msg; t.classList.remove('hidden'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.add('hidden'), ms); }
+function withTimeout(p, ms, msg) { let t; return Promise.race([p, new Promise((_, rej) => { t = setTimeout(() => rej(new Error(msg || 'Timed out')), ms); })]).finally(() => clearTimeout(t)); }
+function show(el, on = true) { (typeof el === 'string' ? $(el) : el).classList.toggle('hidden', !on); }
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// ---------- crypto ----------
+const te = new TextEncoder(), td = new TextDecoder();
+function b64(buf) { const u = buf instanceof Uint8Array ? buf : new Uint8Array(buf); let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); }
+function unb64(s) { const bin = atob(s); const u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; }
+async function deriveKey(pass, saltB64, iter) {
+  const base = await crypto.subtle.importKey('raw', te.encode(pass.normalize('NFKC')), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: unb64(saltB64), iterations: iter, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+}
+async function seal(key, obj, aad) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv, additionalData: te.encode(aad) }, key, te.encode(JSON.stringify(obj)));
+  return { v: 1, iv: b64(iv), ct: b64(ct) };
+}
+async function unseal(key, rec, aad) {
+  const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(rec.iv), additionalData: te.encode(aad) }, key, unb64(rec.ct));
+  return JSON.parse(td.decode(pt));
+}
+async function newVaultMeta(pass) {
+  const salt = b64(crypto.getRandomValues(new Uint8Array(16)));
+  const key = await deriveKey(pass, salt, ITER);
+  const meta = { v: 1, kdf: 'PBKDF2-SHA256', cipher: 'AES-256-GCM', iter: ITER, salt, check: await seal(key, CHECK, 'check'), updatedAt: new Date().toISOString() };
+  return { meta, key };
+}
+async function keyFromMeta(meta, pass) {
+  const key = await deriveKey(pass, meta.salt, meta.iter || ITER);
+  let ok = false;
+  try { ok = (await unseal(key, meta.check, 'check')) === CHECK; } catch (e) { ok = false; }
+  if (!ok) throw new Error("That passphrase doesn't open this vault.");
+  return key;
+}
+const aadFor = (id) => 'statement:' + id;
+
+// ---------- storage: private GitHub repository ----------
+const API = 'https://api.github.com';
+function ghMessage(status) {
+  if (status === 401) return 'GitHub rejected the access token. Check it was copied in full; if it has expired, create a new one (README, step 3) and enter it here.';
+  if (status === 403) return "The token isn't allowed to change this repository. It needs Contents: Read and write on the data repository.";
+  if (status === 404) return "GitHub can't find that repository with this token. Check the name (owner/repository) and that the token was given access to it.";
+  if (status === 409 || status === 422) return 'Someone else saved at the same moment. Try again.';
+  if (status >= 500) return 'GitHub is having trouble right now. Try again in a few minutes.';
+  return 'GitHub returned an error (' + status + ').';
+}
+function githubStore(repo, token) {
+  const shas = new Map();
+  async function req(method, url, body) {
+    let r;
+    try {
+      r = await fetch(API + url, {
+        method, cache: 'no-store',
+        headers: { Accept: 'application/vnd.github+json', Authorization: 'Bearer ' + token, 'X-GitHub-Api-Version': '2022-11-28', ...(body ? { 'Content-Type': 'application/json' } : {}) },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+    } catch (e) { const err = new Error("Couldn't reach GitHub. Check your internet connection."); err.code = 'network'; throw err; }
+    if (r.status === 404 && method === 'GET') return null;
+    if (!r.ok) { const err = new Error(ghMessage(r.status)); err.status = r.status; throw err; }
+    return r.status === 204 ? null : r.json();
+  }
+  const path = (p) => `/repos/${repo}/contents/${p.split('/').map(encodeURIComponent).join('/')}`;
+  async function getText(p) {
+    const j = await req('GET', path(p));
+    if (!j) return null;
+    shas.set(p, j.sha);
+    if (j.encoding !== 'base64' || j.content == null) throw new Error(`${p} is too large to read.`);
+    return td.decode(unb64(j.content.replace(/\s/g, '')));
+  }
+  async function putText(p, text, message) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const j = await req('PUT', path(p), { message, content: b64(te.encode(text)), sha: shas.get(p) });
+        shas.set(p, j.content.sha);
+        return;
+      } catch (e) {
+        if ((e.status === 409 || e.status === 422) && attempt === 0) { const cur = await req('GET', path(p)); if (cur) shas.set(p, cur.sha); else shas.delete(p); continue; }
+        throw e;
+      }
+    }
+  }
+  return {
+    mode: 'github', repo,
+    async check() {
+      const j = await req('GET', `/repos/${repo}`);
+      if (!j) { const err = new Error(ghMessage(404)); err.status = 404; throw err; }
+      return { private: !!j.private, url: j.html_url, fullName: j.full_name };
+    },
+    async getMeta() { const t = await getText('vault/meta.json'); return t ? JSON.parse(t) : null; },
+    async setMeta(m) { await putText('vault/meta.json', JSON.stringify(m, null, 1) + '\n', 'Update vault settings'); },
+    async list() {
+      const dir = await req('GET', path('statements'));
+      if (!Array.isArray(dir)) return [];
+      const files = dir.filter((f) => f.type === 'file' && /\.json$/.test(f.name));
+      const out = [];
+      for (let i = 0; i < files.length; i += 6) {
+        const batch = await Promise.all(files.slice(i, i + 6).map(async (f) => ({ id: f.name.replace(/\.json$/, ''), rec: JSON.parse(await getText(f.path)) })));
+        out.push(...batch);
+      }
+      return out;
+    },
+    async put(id, rec) { await putText(`statements/${id}.json`, JSON.stringify(rec) + '\n', `Save statement ${id}`); },
+    async del(id) {
+      const p = `statements/${id}.json`;
+      if (!shas.has(p)) { const cur = await req('GET', path(p)); if (!cur) return; shas.set(p, cur.sha); }
+      await req('DELETE', path(p), { message: `Delete statement ${id}`, sha: shas.get(p) });
+      shas.delete(p);
+    },
+    async putReadme() {
+      if (await req('GET', path('README.md'))) return;
+      await putText('README.md', DATA_README, 'Describe the encrypted data');
+    },
+  };
+}
+const DATA_README = `# Lakeside Preschool treasury data (encrypted)
+
+This private repository is the storage for the Lakeside Treasury app. Every file here is encrypted
+in the browser with AES-256-GCM using a key derived from the treasury passphrase. The files can't be
+read without that passphrase, and the passphrase is never stored here.
+
+- \`vault/meta.json\`: encryption settings and a check value used to confirm the passphrase
+- \`statements/YYYY-MM.json\`: one encrypted monthly statement (figures, notes and board summary)
+
+Don't edit these files by hand. To restore an earlier state, use the repository's commit history.
+`;
+async function putStatement(s) {
+  const rec = await seal(App.key, s, aadFor(s.id));
+  rec.updatedAt = new Date().toISOString();
+  await App.store.put(s.id, rec);
+  const i = App.statements.findIndex((x) => x.id === s.id);
+  if (i >= 0) App.statements[i] = s; else App.statements.push(s);
+  App.statements.sort(byPeriod);
+}
+function writeError(e) { return (e && e.message) || 'Could not save. Try again in a moment.'; }
+
+// ---------- this device: remembered repository + encrypted token ----------
+const DEVICE_KEY = 'lakeside-treasury.device';
+function readDevice() { try { const d = JSON.parse(localStorage.getItem(DEVICE_KEY) || 'null'); return d && d.repo && d.tok ? d : null; } catch (e) { return null; } }
+function forgetDevice() { try { localStorage.removeItem(DEVICE_KEY); } catch (e) { /* storage unavailable */ } }
+async function rememberDevice(repo, token, pass) {
+  const salt = b64(crypto.getRandomValues(new Uint8Array(16)));
+  const key = await deriveKey(pass, salt, ITER);
+  const tok = await seal(key, token, 'device-token:' + repo);
+  try { localStorage.setItem(DEVICE_KEY, JSON.stringify({ v: 1, repo, salt, tok })); return true; } catch (e) { return false; }
+}
+async function tokenFromDevice(dev, pass) {
+  const key = await deriveKey(pass, dev.salt, ITER);
+  try { return await unseal(key, dev.tok, 'device-token:' + dev.repo); } catch (e) { throw new Error("That passphrase doesn't open the books on this device."); }
+}
+
+// ---------- gate ----------
+function showGate(which, msg) {
+  ['unlockForm', 'connectForm', 'restoreBox'].forEach((x) => show(x, x === which));
+  if (which === 'unlockForm') { const d = readDevice(); $('unlockRepo').textContent = d ? d.repo : ''; $('unlockErr').textContent = msg || ''; $('unlockPass').focus(); }
+  if (which === 'connectForm') { $('connectErr').textContent = msg || ''; const d = readDevice(); if (d && !$('cRepo').value) $('cRepo').value = d.repo; ($('cRepo').value ? $('cToken') : $('cRepo')).focus(); }
+}
+function setNewVaultMode(on) {
+  App.newVault = on;
+  show('cPass2Wrap', on); show('cMeterWrap', on); show('cRestoreWrap', on);
+  $('connectBtn').textContent = on ? 'Create encrypted books' : 'Open the books';
+}
+function boot() {
+  if (!window.crypto || !crypto.subtle) { $('gateCard').insertAdjacentHTML('beforeend', '<p class="err">This browser can\'t do the encryption the books need. Open the page over https in a current browser.</p>'); return; }
+  showGate(readDevice() ? 'unlockForm' : 'connectForm');
+}
+
+function strength(p) { let s = Math.min(p.length / 20, 1) * 70; if (/[a-z]/.test(p) && /[A-Z]/.test(p)) s += 10; if (/\d/.test(p)) s += 10; if (/[^\w]|\s/.test(p)) s += 10; return Math.min(s, 100); }
+$('cPass').addEventListener('input', (e) => { const s = strength(e.target.value); const m = $('setupMeter'); m.style.width = s + '%'; m.style.background = s < 50 ? 'var(--bad)' : s < 80 ? 'var(--warn)' : 'var(--good)'; });
+$('cRepo').addEventListener('input', () => setNewVaultMode(false));
+$('forgetDevice').addEventListener('click', () => { forgetDevice(); setNewVaultMode(false); showGate('connectForm'); });
+
+$('unlockForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = $('unlockBtn'); btn.disabled = true; btn.textContent = 'Unlocking…'; $('unlockErr').textContent = '';
+  const pass = $('unlockPass').value;
+  try {
+    const dev = readDevice();
+    if (!dev) return showGate('connectForm');
+    const token = await tokenFromDevice(dev, pass);
+    App.store = githubStore(dev.repo, token);
+    App.meta = await App.store.getMeta();
+    if (!App.meta) throw new Error('The data repository has no books in it. Choose "Use a different repository or token".');
+    App.key = await keyFromMeta(App.meta, pass);
+    $('unlockPass').value = '';
+    await loadAll();
+    enterApp();
+  } catch (err) {
+    App.store = null;
+    if (err.status === 401 || err.status === 404) { $('cPass').value = ''; return showGate('connectForm', err.message); }
+    $('unlockErr').textContent = err.message;
+  } finally { btn.disabled = false; btn.textContent = 'Unlock'; }
+});
+
+$('connectForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const repo = $('cRepo').value.trim().replace(/^https?:\/\/github\.com\//, '').replace(/\.git$/, '').replace(/\/+$/, '');
+  const token = $('cToken').value.trim(), pass = $('cPass').value;
+  $('connectErr').textContent = ''; $('connectErr').classList.remove('note');
+  if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) return ($('connectErr').textContent = 'Enter the repository as owner/name, for example lakeside-treasury/lakeside-treasury-data.');
+  const btn = $('connectBtn'); btn.disabled = true; const label = btn.textContent; btn.textContent = 'Checking…';
+  try {
+    const store = githubStore(repo, token);
+    const info = await store.check();
+    if (!info.private) throw new Error('That repository is public. The books must live in a private repository: change it to private in the repository settings, or create a new private one.');
+    const meta = await store.getMeta();
+    if (meta) {
+      App.key = await keyFromMeta(meta, pass);
+      App.meta = meta;
+    } else {
+      if (!App.newVault) { App.store = store; setNewVaultMode(true); $('connectErr').classList.add('note'); $('connectErr').textContent = 'This repository is empty. To start the books here, type the passphrase again below, or start from a backup file.'; $('cPass2').focus(); return; }
+      if (pass.length < 12) throw new Error('Use a passphrase of at least 12 characters.');
+      if (pass !== $('cPass2').value) throw new Error("The two passphrases don't match.");
+      btn.textContent = 'Creating…';
+      const { meta: m, key } = await newVaultMeta(pass);
+      await store.putReadme();
+      await store.setMeta(m);
+      App.meta = m; App.key = key;
+    }
+    App.store = store;
+    if ($('cRemember').checked) await rememberDevice(repo, token, pass); else forgetDevice();
+    App.repoUrl = info.url;
+    $('cToken').value = $('cPass').value = $('cPass2').value = '';
+    await loadAll();
+    const fresh = App.newVault; setNewVaultMode(false);
+    enterApp();
+    if (fresh) location.hash = '#statements';
+  } catch (err) { App.key = null; $('connectErr').classList.remove('note'); $('connectErr').textContent = err.message; }
+  finally { btn.disabled = false; if (btn.textContent === 'Checking…' || btn.textContent === 'Creating…') btn.textContent = App.newVault ? 'Create encrypted books' : label; }
+});
+
+$('gateRestore').addEventListener('click', () => { if (!App.store) return; showGate('restoreBox'); });
+$('restoreCancel').addEventListener('click', () => showGate('connectForm'));
+$('restoreBtn').addEventListener('click', async () => {
+  const f = $('restoreFile').files[0]; const pass = $('restorePass').value; $('restoreErr').textContent = '';
+  if (!f || !pass) return ($('restoreErr').textContent = 'Choose the backup file and enter its passphrase.');
+  const btn = $('restoreBtn'); btn.disabled = true; btn.textContent = 'Restoring…';
+  try {
+    const { meta, key, statements } = await openBackup(await f.text(), pass);
+    if (await App.store.getMeta()) throw new Error('This repository already has books. Unlock them and use "Merge backup" instead.');
+    await App.store.putReadme();
+    await App.store.setMeta(meta);
+    App.key = key; App.meta = meta; App.statements = [];
+    for (const s of statements) { btn.textContent = `Restoring ${App.statements.length + 1} of ${statements.length}…`; await putStatement(s); }
+    const token = $('cToken').value.trim();
+    if ($('cRemember').checked && token) await rememberDevice(App.store.repo, token, pass);
+    $('restorePass').value = $('cToken').value = $('cPass').value = $('cPass2').value = '';
+    setNewVaultMode(false);
+    enterApp();
+    toast(`Restored ${statements.length} statement${statements.length === 1 ? '' : 's'}.`);
+  } catch (err) { $('restoreErr').textContent = err.message; }
+  finally { btn.disabled = false; btn.textContent = 'Restore'; }
+});
+
+async function loadAll() {
+  const rows = await App.store.list();
+  const out = [], failed = [];
+  for (const { id, rec } of rows) {
+    if (!rec || !rec.iv) continue;
+    try { out.push(await unseal(App.key, rec, aadFor(id))); } catch (e) { failed.push(id); }
+  }
+  App.statements = out.sort(byPeriod);
+  App.failed = failed;
+}
+
+function enterApp() {
+  show('gate', false); show('app');
+  armIdle();
+  renderAll();
+  route();
+}
+function lock(reason) {
+  App.key = null; App.store = null; App.statements = []; App.queue = []; App.failed = [];
+  $('memo').innerHTML = ''; $('ledgerTable').innerHTML = ''; $('savedTable').innerHTML = ''; $('queue').innerHTML = '';
+  show('app', false); show('gate');
+  showGate(readDevice() ? 'unlockForm' : 'connectForm', reason || '');
+  clearTimeout(App.idleTimer);
+}
+function armIdle() { clearTimeout(App.idleTimer); if (App.key) App.idleTimer = setTimeout(() => lock('Locked after 20 minutes without activity.'), IDLE_MS); }
+['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach((ev) => window.addEventListener(ev, armIdle, { passive: true }));
+$('lockBtn').addEventListener('click', () => lock());
+window.addEventListener('pagehide', () => { if (App.key) lock(); });
+
+// ---------- routing ----------
+const VIEWS = ['brief', 'statements', 'ledger', 'handoff'];
+function route() {
+  const v = (location.hash || '').slice(1);
+  App.view = VIEWS.includes(v) ? v : 'brief';
+  document.querySelectorAll('[data-v]').forEach((s) => show(s, s.dataset.v === App.view));
+  document.querySelectorAll('nav.tabs a').forEach((a) => { if (a.dataset.view === App.view) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+  window.scrollTo(0, 0);
+}
+window.addEventListener('hashchange', route);
+
+function renderAll() {
+  renderBanners();
+  $('brandSub').textContent = App.statements.length ? `${App.statements.length} statement${App.statements.length === 1 ? '' : 's'} · latest ${fmtDate(App.statements[App.statements.length - 1].periodEnd, 'month')}` : '';
+  renderBriefPicker();
+  renderBrief();
+  renderStatements();
+  renderLedger();
+  $('storageInfo').innerHTML = `Books are stored in <b>${esc(App.store.repo)}</b>. Every save is a commit, so earlier versions stay in the repository's history.`;
+}
+function renderBanners() {
+  const b = [];
+  if (App.failed.length) b.push(`<div class="banner bad">${App.failed.length} stored record${App.failed.length === 1 ? '' : 's'} (${esc(App.failed.join(', '))}) couldn't be decrypted with this passphrase. They may have been saved with an older passphrase.</div>`);
+  if (typeof pdfjsLib === 'undefined') b.push(`<div class="banner warn">The PDF reader didn't load, so statements can't be imported right now. Check your connection and reload.</div>`);
+  $('banners').innerHTML = b.join('');
+}
+
+// ---------- brief ----------
+function renderBriefPicker() {
+  const sel = $('briefPick');
+  const list = [...App.statements].reverse();
+  if (!App.briefId || !App.statements.find((s) => s.id === App.briefId)) App.briefId = list[0] ? list[0].id : null;
+  sel.innerHTML = list.map((s) => `<option value="${s.id}" ${s.id === App.briefId ? 'selected' : ''}>${esc(fmtDate(s.periodEnd))} · FY ${esc(fyLabel(s.fy))}</option>`).join('');
+}
+$('briefPick').addEventListener('change', (e) => { App.briefId = e.target.value; renderBrief(); });
+
+function currentStatement() { return App.statements.find((s) => s.id === App.briefId) || null; }
+
+function paceRow(label, value, pace, ly, kind) {
+  const w = value == null ? 0 : Math.max(0, Math.min(value, 1.25)) / 1.25 * 100;
+  const tick = (x) => (Math.min(x, 1.25) / 1.25 * 100).toFixed(1) + '%';
+  return `<div class="pace-row"><span>${esc(label)}</span><div class="pace-track"><b class="${value > 1 ? (kind === 'income' ? 'met' : 'over') : ''}" style="width:${w.toFixed(1)}%"></b>${ly != null ? `<s style="left:${tick(ly)}" title="Last year at this point"></s>` : ''}<u style="left:${tick(pace)}" title="Share of year elapsed"></u></div><span class="num" style="text-align:right">${pct(value)}</span></div>`;
+}
+
+function renderBrief() {
+  const s = currentStatement();
+  show('briefEmpty', !s); show('briefMain', !!s);
+  if (!s) return;
+  const b = C.buildBrief(s, App.statements);
+  const h = b.headline;
+  const netCls = h.net.actual < 0 ? 'neg' : '';
+  const vsLy = (now, ly) => (ly == null ? '' : `${money(now - ly, { plus: true })} vs same point last year`);
+  const cashDelta = b.cash.prevTotal != null ? `${money(b.cash.total - b.cash.prevTotal, { plus: true })} since ${fmtDate(b.cash.prevAsOf, 'short')}` : 'First statement on file';
+
+  const watch = b.watch.length
+    ? b.watch.map((w) => `<div class="wi ${w.status}"><div><div class="t">${esc(w.name)}</div><div class="d">${esc(w.note)}</div></div><span class="chip ${w.status}">${esc(C.STATUS_LABEL[w.status])}</span></div>`).join('')
+    : `<p class="hint">Nothing outside the expected range this month.</p>`;
+  const good = b.good.map((w) => `<div class="wi met"><div><div class="t">${esc(w.name)}</div><div class="d">${esc(w.note)}</div></div><span class="chip met">${w.status === 'met' ? 'Budget met' : 'Extra income'}</span></div>`).join('');
+
+  const monthly = b.monthly
+    ? `<div class="section"><h3>This month</h3>
+        <p>Income ${money(b.monthly.income)}, expenses ${money(b.monthly.expense)}, net <b class="${b.monthly.net < 0 ? 'neg' : 'pos'}">${money(b.monthly.net, { plus: true })}</b>${b.monthly.basis ? ` <span class="hint">(change since the ${esc(fmtDate(b.monthly.basis, 'short'))} statement)</span>` : ''}.</p>
+        <table class="movers"><thead><tr><th>Largest movements</th><th class="n">Change</th></tr></thead><tbody>
+        ${b.monthly.movers.map((m) => `<tr><td>${esc(m.name)} <span class="hint">${m.sec === 'income' ? 'income' : 'expense'}</span></td><td class="n">${money(m.value, { plus: true })}</td></tr>`).join('')}
+        </tbody></table></div>`
+    : `<div class="section"><h3>This month</h3><p class="hint">Month-only figures need the previous month's statement. Add it on the Statements page.</p></div>`;
+
+  const cash = `<table><thead><tr><th>Account</th><th class="n">Balance</th><th class="n">vs last report</th><th class="n">A year ago</th></tr></thead><tbody>
+    ${b.cash.accounts.map((a) => `<tr><td>${esc(a.name)}</td><td class="n">${money(a.value)}</td><td class="n ${a.prev != null && a.value - a.prev < 0 ? 'neg' : ''}">${a.prev == null ? '—' : a.value === a.prev ? 'no change' : money(a.value - a.prev, { plus: true })}</td><td class="n">${money(a.yearAgo)}</td></tr>`).join('')}
+    <tr><td><b>Total</b></td><td class="n"><b>${money(b.cash.total)}</b></td><td class="n">${b.cash.prevTotal != null ? money(b.cash.total - b.cash.prevTotal, { plus: true }) : '—'}</td><td class="n">${money(b.cash.yearAgoTotal)}</td></tr></tbody></table>`;
+
+  const nonop = b.nonOp.length ? `<div class="section"><h3>Non-operating items, FY ${esc(fyLabel(s.fy))}</h3><table><tbody>${b.nonOp.map((n) => `<tr><td>${esc(n.name)}</td><td class="n">${money(n.value)}</td></tr>`).join('')}</tbody></table></div>` : '';
+  const checks = b.checks.length ? `<div class="section"><h3>Data checks</h3><ul class="checks">${b.checks.map((c) => `<li>${esc(c.msg)}</li>`).join('')}</ul></div>` : `<div class="section"><h3>Data checks</h3><p class="hint">Totals add up and the dates are consistent.</p></div>`;
+  const ro = App.canWrite === false ? 'readonly' : '';
+
+  $('memo').innerHTML = `
+    <div class="memo-title">
+      <span class="eyebrow">Budget brief · FY ${esc(fyLabel(s.fy))} · month ${s.fyMonth} of 12</span>
+      <h1>Through ${esc(fmtDate(s.periodEnd))}</h1>
+      <span class="hint">From ${esc(s.source && s.source.fileName || 'bookkeeper statement')}</span>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><span class="k">Net operating income, YTD</span><span class="v ${netCls}">${money(h.net.actual)}</span><span class="s">${esc(vsLy(h.net.actual, h.net.lastYear))}</span></div>
+      <div class="kpi"><span class="k">Income, YTD</span><span class="v">${money(h.income.actual)}</span><span class="s">${pct(h.income.pct)} of ${money(h.income.budget)} budget</span></div>
+      <div class="kpi"><span class="k">Expenses, YTD</span><span class="v">${money(h.expense.actual)}</span><span class="s">${pct(h.expense.pct)} of ${money(h.expense.budget)} budget</span></div>
+      <div class="kpi"><span class="k">Cash across accounts</span><span class="v">${money(b.cash.total)}</span><span class="s">${esc(cashDelta)}</span></div>
+    </div>
+    <div class="section">
+      <h3>Progress against the annual budget</h3>
+      <div class="pace">
+        ${paceRow('Year elapsed', b.pace, b.pace, null)}
+        ${paceRow('Income', h.income.pct, b.pace, h.income.lyPct, 'income')}
+        ${paceRow('Expenses', h.expense.pct, b.pace, h.expense.lyPct)}
+      </div>
+      <div class="pace-legend"><span>Share of year elapsed</span><span class="ly">Same point last year</span></div>
+    </div>
+    ${monthly}
+    <div class="section"><h3>Watch list</h3><div class="watch">${watch}</div></div>
+    ${good ? `<div class="section"><h3>Income at or above budget</h3><div class="watch">${good}</div></div>` : ''}
+    <div class="section"><h3>Cash by account</h3><div style="overflow-x:auto">${cash}</div></div>
+    ${nonop}
+    <div class="two">
+      <div class="section"><h3>Summary for the board</h3>
+        <textarea id="narr" ${ro} placeholder="A few sentences for the board: overall position, what needs attention, any follow-ups.">${esc(s.narrative || '')}</textarea>
+        <div class="row"><button type="button" id="saveNarr" ${ro ? 'disabled' : ''}>Save summary</button><span class="saved-note" id="narrNote"></span></div></div>
+      <div class="section"><h3>Treasurer notes</h3>
+        <textarea id="notes" ${ro} placeholder="Follow-ups, explanations from the director, questions for the bookkeeper…">${esc(s.notes || '')}</textarea>
+        <div class="row"><button type="button" id="saveNotes" ${ro ? 'disabled' : ''}>Save notes</button><span class="saved-note" id="notesNote"></span></div></div>
+    </div>
+    ${checks}`;
+  $('saveNarr').addEventListener('click', () => saveField('narrative', $('narr').value, 'narrNote'));
+  $('saveNotes').addEventListener('click', () => saveField('notes', $('notes').value, 'notesNote'));
+}
+
+async function saveField(field, value, noteId) {
+  const s = currentStatement(); if (!s) return;
+  if ((s[field] || '') === value) { $(noteId).textContent = 'No changes.'; return; }
+  const next = { ...s, [field]: value };
+  try { $(noteId).textContent = 'Saving…'; await putStatement(next); $(noteId).textContent = 'Saved and encrypted.'; }
+  catch (e) { $(noteId).textContent = writeError(e); }
+}
+
+$('copyBrief').addEventListener('click', async () => {
+  const s = currentStatement(); if (!s) return;
+  const merged = { ...s, narrative: ($('narr') && $('narr').value) || s.narrative, notes: ($('notes') && $('notes').value) || s.notes };
+  const text = C.briefToText(merged, C.buildBrief(s, App.statements));
+  try { await navigator.clipboard.writeText(text); toast('Brief copied. Paste it into your email.'); }
+  catch (e) { toast("Couldn't copy automatically. Try again, or use Download."); }
+});
+$('dlBrief').addEventListener('click', async () => {
+  const s = currentStatement(); if (!s) return;
+  const merged = { ...s, narrative: ($('narr') && $('narr').value) || s.narrative, notes: ($('notes') && $('notes').value) || s.notes };
+  await saveFile(`Lakeside budget brief ${s.id}.txt`, C.briefToText(merged, C.buildBrief(s, App.statements)));
+});
+
+async function saveFile(filename, data) {
+  const blob = data instanceof Blob ? data : new Blob([data], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
+  return true;
+}
+
+// ---------- statements / import ----------
+const drop = $('drop');
+['dragenter', 'dragover'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave', 'drop'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', (e) => handleFiles(e.dataTransfer.files));
+$('fileIn').addEventListener('change', (e) => { handleFiles(e.target.files); e.target.value = ''; });
+
+async function pdfItems(file) {
+  if (typeof pdfjsLib === 'undefined') throw new Error("The PDF reader didn't load. Reload the page and try again.");
+  const data = new Uint8Array(await file.arrayBuffer());
+  const doc = await pdfjsLib.getDocument({ data, isEvalSupported: false, disableFontFace: true }).promise;
+  const items = [];
+  for (let p = 1; p <= doc.numPages; p++) {
+    const page = await doc.getPage(p);
+    const tc = await page.getTextContent();
+    for (const it of tc.items) if (typeof it.str === 'string') items.push({ str: it.str, x: it.transform[4], y: it.transform[5], w: it.width, page: p });
+  }
+  await doc.destroy();
+  return items;
+}
+const numbersOnly = (s) => JSON.stringify([s.income, s.expense, s.totals, s.nonOp, s.banks]);
+
+async function handleFiles(files) {
+  const list = [...files].filter((f) => /\.pdf$/i.test(f.name) || f.type === 'application/pdf');
+  if (!list.length) return toast('Those files are not PDFs.');
+  show('queueWrap');
+  for (const f of list) {
+    const q = { key: Math.random().toString(36).slice(2), fileName: f.name, st: null, error: null };
+    App.queue.push(q); renderQueue();
+    try {
+      const st = C.parseStatement(await pdfItems(f), f.name);
+      q.st = st;
+    } catch (e) { q.error = e.message || String(e); }
+    renderQueue();
+  }
+}
+function queueStatus(q) {
+  if (!q.st) return null;
+  const ex = App.statements.find((s) => s.id === q.st.id);
+  const dupInQueue = App.queue.filter((x) => x.st && x.st.id === q.st.id).length > 1;
+  if (!ex) return { t: dupInQueue ? 'Duplicate month in this batch' : 'New', cls: dupInQueue ? 'ahead' : 'met' };
+  if (numbersOnly(ex) === numbersOnly(q.st)) return { t: 'Already saved (identical)', cls: '' };
+  return { t: 'Replaces saved version', cls: 'ahead' };
+}
+function renderQueue() {
+  show('queueWrap', App.queue.length > 0);
+  $('queue').innerHTML = App.queue.map((q) => {
+    if (!q.st && !q.error) return `<div class="card qi"><div><b>${esc(q.fileName)}</b><div class="meta">Reading…</div></div></div>`;
+    if (q.error) return `<div class="card qi"><div><b>${esc(q.fileName)}</b><div class="meta neg">${esc(q.error)}</div></div><div class="row"><button type="button" data-qdrop="${q.key}">Dismiss</button></div></div>`;
+    const s = q.st, st = queueStatus(q), T = s.totals;
+    return `<div class="card qi">
+      <div><div class="row"><b>${esc(fmtDate(s.periodEnd))}</b><span class="chip ${st.cls}">${esc(st.t)}</span></div>
+        <div class="meta">FY ${esc(fyLabel(s.fy))}, month ${s.fyMonth} · ${s.income.length + s.expense.length} lines · income ${money(T.income.actual)} · expenses ${money(T.expense.actual)} · cash ${money(C.bankTotal(s.banks[0]))} · ${esc(q.fileName)}</div>
+        ${s.warnings.length ? `<ul>${s.warnings.map((w) => `<li>${esc(w.msg)}</li>`).join('')}</ul>` : ''}</div>
+      <div class="row"><button type="button" data-qdrop="${q.key}">Discard</button><button type="button" class="primary" data-qsave="${q.key}">Save</button></div></div>`;
+  }).join('');
+}
+$('queue').addEventListener('click', async (e) => {
+  const d = e.target.closest('[data-qdrop]'); const sv = e.target.closest('[data-qsave]');
+  if (d) { App.queue = App.queue.filter((q) => q.key !== d.dataset.qdrop); renderQueue(); }
+  if (sv) { const q = App.queue.find((x) => x.key === sv.dataset.qsave); sv.disabled = true; await saveQueued([q]); }
+});
+$('saveAll').addEventListener('click', async () => { const btn = $('saveAll'); btn.disabled = true; await saveQueued(App.queue.filter((q) => q.st)); btn.disabled = false; });
+$('discardAll').addEventListener('click', () => { App.queue = []; renderQueue(); });
+
+async function saveQueued(qs) {
+  let n = 0;
+  // newest file wins when a batch has the same month twice
+  const seen = new Set();
+  for (const q of [...qs].reverse()) {
+    if (!q || !q.st) continue;
+    if (seen.has(q.st.id)) { App.queue = App.queue.filter((x) => x !== q); continue; }
+    seen.add(q.st.id);
+    const ex = App.statements.find((s) => s.id === q.st.id);
+    const s = { ...q.st, notes: ex ? ex.notes || '' : '', narrative: ex ? ex.narrative || '' : '', importedAt: new Date().toISOString() };
+    try { await putStatement(s); App.queue = App.queue.filter((x) => x !== q); n++; }
+    catch (e) { toast(writeError(e), 6000); break; }
+  }
+  renderQueue();
+  if (n) { App.briefId = null; renderAll(); toast(`Saved ${n} statement${n === 1 ? '' : 's'}.`); }
+}
+
+function renderStatements() {
+  // coverage
+  const fys = C.fiscalYears(App.statements);
+  const months = ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+  $('coverage').innerHTML = fys.length
+    ? `<div class="cov-row"><span></span>${months.map((m) => `<span class="hint" style="text-align:center">${m}</span>`).join('')}</div>` +
+      fys.map((fy) => `<div class="cov-row"><b>${esc(fyLabel(fy))}</b>${months.map((m, i) => { const s = App.statements.find((x) => x.fy === fy && x.fyMonth === i + 1); return `<span class="m ${s ? 'have' : ''} ${s && s.warnings.some((w) => w.level === 'warn') ? 'warn' : ''}" title="${s ? esc(fmtDate(s.periodEnd)) : 'Missing'}">${s ? '✓' : ''}</span>`; }).join('')}</div>`).join('')
+    : `<p class="hint">Nothing saved yet.</p>`;
+  const rows = [...App.statements].reverse();
+  const canDel = App.canWrite !== false;
+  $('savedTable').innerHTML = `<thead><tr><th>Period end</th><th>FY</th><th class="n">Income YTD</th><th class="n">Expenses YTD</th><th class="n">Net YTD</th><th class="n">Cash</th><th>Checks</th><th></th></tr></thead><tbody>` +
+    (rows.length ? rows.map((s) => `<tr><td><a href="#brief" data-open="${s.id}">${esc(fmtDate(s.periodEnd))}</a></td><td>${esc(fyLabel(s.fy))}</td><td class="n">${money(s.totals.income.actual)}</td><td class="n">${money(s.totals.expense.actual)}</td><td class="n ${s.totals.net && s.totals.net.actual < 0 ? 'neg' : ''}">${money(s.totals.net ? s.totals.net.actual : null)}</td><td class="n">${money(C.bankTotal(s.banks[0]))}</td><td>${s.warnings.length ? `<span class="chip ahead" title="${esc(s.warnings.map((w) => w.msg).join('\n'))}">${s.warnings.length} note${s.warnings.length === 1 ? '' : 's'}</span>` : '<span class="hint">OK</span>'}</td><td>${canDel ? `<span data-delwrap="${s.id}"><button type="button" class="ghost danger" data-del="${s.id}">Delete</button></span>` : ''}</td></tr>`).join('')
+      : `<tr><td colspan="8" class="hint">Drop statement PDFs above to get started.</td></tr>`) + `</tbody>`;
+}
+$('savedTable').addEventListener('click', async (e) => {
+  const o = e.target.closest('[data-open]'); if (o) { App.briefId = o.dataset.open; renderBriefPicker(); renderBrief(); return; }
+  const d = e.target.closest('[data-del]');
+  if (d) { const id = d.dataset.del; d.parentElement.innerHTML = `<span class="inline-confirm">Delete ${esc(id)}? <button type="button" class="danger" data-delyes="${id}">Delete</button><button type="button" data-delno="1">Keep</button></span>`; return; }
+  if (e.target.closest('[data-delno]')) { renderStatements(); return; }
+  const y = e.target.closest('[data-delyes]');
+  if (y) {
+    try { await App.store.del(y.dataset.delyes); App.statements = App.statements.filter((s) => s.id !== y.dataset.delyes); renderAll(); toast('Statement deleted.'); }
+    catch (err) { toast(writeError(err)); }
+  }
+});
+
+// ---------- ledger ----------
+function renderLedger() {
+  const fys = C.fiscalYears(App.statements);
+  if (!App.ledgerFy || !fys.includes(App.ledgerFy)) App.ledgerFy = fys[0] || null;
+  $('yearTabs').innerHTML = fys.map((fy) => `<button type="button" data-fy="${fy}" aria-pressed="${fy === App.ledgerFy}">FY ${esc(fyLabel(fy))}</button>`).join('');
+  if (!App.ledgerFy) { $('ledgerTable').innerHTML = `<tbody><tr><td class="hint">No statements yet.</td></tr></tbody>`; return; }
+  const m = C.yearModel(App.statements, App.ledgerFy);
+  const sts = m.statements;
+  const head1 = `<tr><th class="name" rowspan="2">Line item</th><th class="n" rowspan="2">Annual budget</th>${sts.map((s) => `<th class="mo" colspan="3">${esc(fmtDate(s.periodEnd, 'month'))}</th>`).join('')}</tr>`;
+  const head2 = `<tr>${sts.map(() => `<th class="n first">YTD</th><th class="n">% bud.</th><th class="n">Change</th>`).join('')}</tr>`;
+  const cellsFor = (cells) => cells.map((c) => {
+    const cls = c.assess && ['over', 'ahead', 'behind', 'met'].includes(c.assess.status) ? 'c-' + c.assess.status : '';
+    return `<td class="n first">${money(c.ytd)}</td><td class="n ${cls}">${pct(c.pct)}</td><td class="n">${c.delta == null ? '—' : money(c.delta, { plus: true })}</td>`;
+  }).join('');
+  const totRow = (label, key) => {
+    const t = m.totals.find((x) => x.key === key).cells;
+    const budget = t[t.length - 1] ? t[t.length - 1].budget : null;
+    return `<tr class="tot"><td class="name">${label}</td><td class="n">${money(budget)}</td>${t.map((c, i) => { const prev = sts[i].fyMonth === 1 ? 0 : (sts.findIndex((x) => x.fyMonth === sts[i].fyMonth - 1) >= 0 ? (t[sts.findIndex((x) => x.fyMonth === sts[i].fyMonth - 1)] || {}).actual : null); return `<td class="n first">${money(c && c.actual)}</td><td class="n">${c && c.budget ? pct(c.actual / c.budget) : '—'}</td><td class="n">${prev == null || !c ? '—' : money(c.actual - prev, { plus: true })}</td>`; }).join('')}</tr>`;
+  };
+  const span = 2 + sts.length * 3;
+  const secRow = (t) => `<tr class="sec"><td class="name">${t}</td><td colspan="${span - 1}"></td></tr>`;
+  const lineRows = (rows) => rows.map((r) => `<tr><td class="name">${esc(r.name)}</td><td class="n">${money(r.budget)}</td>${cellsFor(r.cells)}</tr>`).join('');
+  const simpleRows = (rows) => rows.map((r) => `<tr><td class="name">${esc(r.name)}</td><td class="n"></td>${r.cells.map((v) => `<td class="n first">${money(v)}</td><td></td><td></td>`).join('')}</tr>`).join('');
+  const bankTot = `<tr class="tot"><td class="name">Total cash</td><td></td>${sts.map((s) => `<td class="n first">${money(C.bankTotal(s.banks[0]))}</td><td></td><td></td>`).join('')}</tr>`;
+  $('ledgerTable').innerHTML = `<thead>${head1}${head2}</thead><tbody>
+    ${secRow('Operating income')}${lineRows(m.rows.income)}${totRow('Total income', 'income')}
+    ${secRow('Operating expenses')}${lineRows(m.rows.expense)}${totRow('Total expenses', 'expense')}
+    ${totRow('Net operating income (loss)', 'net')}
+    ${m.nonOp.length ? secRow(`Non-operating items (FY ${esc(fyLabel(m.fy))})`) + simpleRows(m.nonOp) : ''}
+    ${secRow('Bank accounts')}${simpleRows(m.banks)}${bankTot}</tbody>`;
+}
+$('yearTabs').addEventListener('click', (e) => { const b = e.target.closest('[data-fy]'); if (b) { App.ledgerFy = b.dataset.fy; renderLedger(); } });
+
+function longRows() {
+  const rows = [['Period end', 'Fiscal year', 'FY month', 'Section', 'Line item', 'YTD actual', 'Annual budget', 'Variance', 'Prior-year YTD', 'Prior-year budget', 'Change since prior statement']];
+  for (const s of App.statements) {
+    const prev = C.prevStatement(App.statements, s);
+    for (const sec of ['income', 'expense']) for (const r of s[sec]) {
+      const p = prev ? (prev[sec].find((x) => x.name === r.name) || {}).actual || 0 : 0;
+      const delta = s.fyMonth === 1 ? r.actual : prev ? (r.actual || 0) - p : null;
+      rows.push([s.periodEnd, s.fy, s.fyMonth, sec === 'income' ? 'Operating income' : 'Operating expenses', r.name, r.actual, r.budget, r.variance, r.priorActual, r.priorBudget, delta]);
+    }
+    for (const [k, lbl] of [['income', 'Total Income'], ['expense', 'Total Expenses'], ['net', 'Net Operating Income (Loss)']]) { const t = s.totals[k]; if (t) rows.push([s.periodEnd, s.fy, s.fyMonth, 'Totals', lbl, t.actual, t.budget, t.variance, t.priorActual, t.priorBudget, null]); }
+    const ci = Math.max(0, s.nonOp.years.indexOf(s.fy));
+    for (const r of s.nonOp.rows) rows.push([s.periodEnd, s.fy, s.fyMonth, 'Non-operating', r.name, r.values[ci], null, null, r.values[ci + 1] ?? null, null, null]);
+    for (const a of (s.banks[0] ? s.banks[0].accounts : [])) rows.push([s.periodEnd, s.fy, s.fyMonth, 'Bank balance', a.name, a.value, null, null, s.banks[1] ? ((s.banks[1].accounts.find((x) => x.name === a.name) || {}).value ?? null) : null, null, null]);
+  }
+  return rows;
+}
+const csvCell = (v) => (v == null ? '' : /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v));
+$('copyCsv').addEventListener('click', async () => {
+  const rows = longRows().filter((r, i) => i === 0 || r[1] === App.ledgerFy);
+  try { await navigator.clipboard.writeText(rows.map((r) => r.map(csvCell).join(',')).join('\n')); toast(`FY ${fyLabel(App.ledgerFy)} copied as CSV.`); }
+  catch (e) { toast("Couldn't copy automatically."); }
+});
+
+const FILLS = { over: 'FFF4CCCC', ahead: 'FFFFEB9C', behind: 'FFFFEB9C', met: 'FFC6EFCE', head: 'FFDCE9EF', sec: 'FFEEF1F3' };
+async function buildWorkbook() {
+  if (typeof ExcelJS === 'undefined') throw new Error("The spreadsheet library didn't load. Reload the page and try again, or use Copy as CSV.");
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'Lakeside Treasury'; wb.created = new Date();
+  const fill = (cell, argb) => { cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb } }; };
+  const NUM = '#,##0;[Red]-#,##0', PCT = '0%';
+  const col = (n) => { let s = ''; n++; while (n) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); } return s; };
+
+  for (const fy of C.fiscalYears(App.statements)) {
+    const m = C.yearModel(App.statements, fy); const sts = m.statements;
+    const ws = wb.addWorksheet(fy, { views: [{ state: 'frozen', xSplit: 2, ySplit: 4 }] });
+    ws.getCell('A1').value = `Lakeside Preschool, Inc. — FY ${fy} running statement`; ws.getCell('A1').font = { bold: true, size: 14 };
+    ws.getCell('A2').value = `Built from the bookkeeper's monthly income statements. % of budget is shaded: red = over annual budget, yellow = ahead of (expenses) or behind (income) the expected pace, green = income budget met. Generated ${new Date().toLocaleDateString('en-US')}.`;
+    ws.getCell('A2').font = { italic: true, color: { argb: 'FF5B6B74' } };
+    const hdr = ws.getRow(4);
+    hdr.getCell(1).value = 'Line item'; hdr.getCell(2).value = 'Approved budget';
+    sts.forEach((s, i) => { const c = 3 + i * 3; hdr.getCell(c).value = `YTD actual through ${fmtDate(s.periodEnd, 'short')}`; hdr.getCell(c + 1).value = '% of budget'; hdr.getCell(c + 2).value = 'Change from last report'; });
+    hdr.eachCell((c) => { c.font = { bold: true }; c.alignment = { wrapText: true, vertical: 'middle' }; fill(c, FILLS.head); });
+    hdr.height = 44;
+    ws.getColumn(1).width = 42; ws.getColumn(2).width = 14;
+    sts.forEach((_, i) => { ws.getColumn(3 + i * 3).width = 14; ws.getColumn(4 + i * 3).width = 10; ws.getColumn(5 + i * 3).width = 13; });
+    let r = 5;
+    const secHead = (t) => { const row = ws.getRow(r++); row.getCell(1).value = t; row.getCell(1).font = { bold: true }; for (let c = 1; c <= 2 + sts.length * 3; c++) fill(row.getCell(c), FILLS.sec); };
+    const prevIdx = (i) => sts.findIndex((x) => x.fyMonth === sts[i].fyMonth - 1);
+    const writeLine = (name, budget, vals, assess) => {
+      const row = ws.getRow(r); row.getCell(1).value = name; row.getCell(2).value = budget; row.getCell(2).numFmt = NUM;
+      vals.forEach((v, i) => {
+        const c = 3 + i * 3, L = col(c - 1);
+        row.getCell(c).value = v; row.getCell(c).numFmt = NUM;
+        const pc = row.getCell(c + 1); pc.value = { formula: `IFERROR(${L}${r}/$B${r},"N/A")`, result: budget ? (v || 0) / budget : 'N/A' }; pc.numFmt = PCT;
+        const a = assess && assess[i]; if (a && FILLS[a.status]) fill(pc, FILLS[a.status]);
+        const pi = prevIdx(i); const dc = row.getCell(c + 2);
+        if (sts[i].fyMonth === 1) { dc.value = { formula: `${L}${r}`, result: v }; }
+        else if (pi >= 0) { const PL = col(3 + pi * 3 - 1); dc.value = { formula: `${L}${r}-${PL}${r}`, result: (v || 0) - (vals[pi] || 0) }; }
+        else dc.value = 'n/a';
+        dc.numFmt = NUM;
+      });
+      return r++;
+    };
+    secHead('Operating Income');
+    const i0 = r; m.rows.income.forEach((x) => writeLine(x.name, x.budget, x.cells.map((c) => c.ytd), x.cells.map((c) => c.assess))); const i1 = r - 1;
+    const totInc = r; const writeTotal = (label, a, b, resultKey) => {
+      const row = ws.getRow(r); row.getCell(1).value = label; row.font = { bold: true };
+      const tb = (sts[sts.length - 1].totals[resultKey] || {}).budget;
+      row.getCell(2).value = { formula: `SUM(B${a}:B${b})`, result: tb }; row.getCell(2).numFmt = NUM;
+      sts.forEach((s, i) => { const c = 3 + i * 3, L = col(c - 1); const t = s.totals[resultKey] || {};
+        row.getCell(c).value = { formula: `SUM(${L}${a}:${L}${b})`, result: t.actual }; row.getCell(c).numFmt = NUM;
+        row.getCell(c + 1).value = { formula: `IFERROR(${L}${r}/$B${r},"N/A")`, result: t.budget ? t.actual / t.budget : 'N/A' }; row.getCell(c + 1).numFmt = PCT;
+        const pi = prevIdx(i); const dc = row.getCell(c + 2);
+        if (s.fyMonth === 1) dc.value = { formula: `${L}${r}`, result: t.actual }; else if (pi >= 0) { const PL = col(3 + pi * 3 - 1); dc.value = { formula: `${L}${r}-${PL}${r}`, result: t.actual - ((sts[pi].totals[resultKey] || {}).actual || 0) }; } else dc.value = 'n/a';
+        dc.numFmt = NUM; });
+      row.eachCell((c) => { c.border = { top: { style: 'thin' } }; c.font = { bold: true }; });
+      return r++;
+    };
+    writeTotal('Total Income', i0, i1, 'income');
+    r++; secHead('Operating Expenses');
+    const e0 = r; m.rows.expense.forEach((x) => writeLine(x.name, x.budget, x.cells.map((c) => c.ytd), x.cells.map((c) => c.assess))); const e1 = r - 1;
+    const totExp = writeTotal('Total Expenses', e0, e1, 'expense');
+    r++;
+    { const row = ws.getRow(r); row.getCell(1).value = 'Net Operating Income (Loss)'; row.font = { bold: true };
+      row.getCell(2).value = { formula: `B${totInc}-B${totExp}`, result: (sts[sts.length - 1].totals.net || {}).budget }; row.getCell(2).numFmt = NUM;
+      sts.forEach((s, i) => { const c = 3 + i * 3, L = col(c - 1); row.getCell(c).value = { formula: `${L}${totInc}-${L}${totExp}`, result: (s.totals.net || {}).actual }; row.getCell(c).numFmt = NUM; });
+      row.eachCell((c) => { c.font = { bold: true }; });
+      r += 2; }
+    if (m.nonOp.length) { secHead(`Non-Operating Items (FY ${fy})`); m.nonOp.forEach((x) => { const row = ws.getRow(r++); row.getCell(1).value = x.name; x.cells.forEach((v, i) => { row.getCell(3 + i * 3).value = v; row.getCell(3 + i * 3).numFmt = NUM; }); }); r++; }
+    secHead('Bank Accounts');
+    const b0 = r; m.banks.forEach((x) => { const row = ws.getRow(r++); row.getCell(1).value = x.name; x.cells.forEach((v, i) => { row.getCell(3 + i * 3).value = v; row.getCell(3 + i * 3).numFmt = NUM; }); });
+    { const row = ws.getRow(r++); row.getCell(1).value = 'Total cash'; row.font = { bold: true }; sts.forEach((s, i) => { const L = col(3 + i * 3 - 1); row.getCell(3 + i * 3).value = { formula: `SUM(${L}${b0}:${L}${r - 2})`, result: C.bankTotal(s.banks[0]) }; row.getCell(3 + i * 3).numFmt = NUM; }); row.eachCell((c) => { c.font = { bold: true }; }); }
+  }
+
+  // Bank balances over time
+  const wsb = wb.addWorksheet('Bank balances', { views: [{ state: 'frozen', ySplit: 1 }] });
+  const accts = []; App.statements.forEach((s) => (s.banks[0] ? s.banks[0].accounts : []).forEach((a) => { if (!accts.includes(a.name)) accts.push(a.name); }));
+  wsb.addRow(['As of', 'Fiscal year', ...accts, 'Total']).font = { bold: true };
+  App.statements.forEach((s) => { const b = s.banks[0]; wsb.addRow([s.periodEnd, s.fy, ...accts.map((n) => { const a = b && b.accounts.find((x) => x.name === n); return a ? a.value : null; }), C.bankTotal(b)]); });
+  for (let i = 0; i < accts.length + 3; i++) { const c = wsb.getColumn(i + 1); c.width = i < 2 ? 13 : 18; if (i >= 2) c.numFmt = NUM; }
+
+  // Long data
+  const wsl = wb.addWorksheet('All statement lines', { views: [{ state: 'frozen', ySplit: 1 }] });
+  longRows().forEach((row, i) => { const rr = wsl.addRow(row); if (i === 0) rr.font = { bold: true }; });
+  for (let i = 0; i < 11; i++) { const c = wsl.getColumn(i + 1); c.width = [12, 11, 9, 18, 40][i] || 15; if (i >= 5) c.numFmt = NUM; }
+  wsl.autoFilter = { from: 'A1', to: 'K1' };
+
+  // Notes
+  const wsn = wb.addWorksheet('Notes & summaries');
+  wsn.addRow(['Period end', 'Summary for the board', 'Treasurer notes', 'Statement file', 'Data checks']).font = { bold: true };
+  App.statements.forEach((s) => wsn.addRow([s.periodEnd, s.narrative || '', s.notes || '', (s.source && s.source.fileName) || '', s.warnings.map((w) => w.msg).join('\n')]));
+  for (let i = 0; i < 5; i++) { const c = wsn.getColumn(i + 1); c.width = [12, 70, 50, 40, 60][i]; c.alignment = { wrapText: true, vertical: 'top' }; }
+  return wb.xlsx.writeBuffer();
+}
+$('dlXlsx').addEventListener('click', async () => {
+  const btn = $('dlXlsx'); btn.disabled = true; btn.textContent = 'Building…';
+  try {
+    if (!App.statements.length) throw new Error('Add a statement first.');
+    const buf = await buildWorkbook();
+    const d = new Date(); await saveFile(`Lakeside Treasury ${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}.xlsx`, new Blob([buf]));
+  } catch (e) { toast(e.message, 6000); }
+  finally { btn.disabled = false; btn.textContent = 'Download Excel workbook'; }
+});
+
+// ---------- handoff ----------
+$('cpBtn').addEventListener('click', async () => {
+  const o = $('cpOld').value, n1 = $('cpNew').value, n2 = $('cpNew2').value; $('cpErr').textContent = '';
+  if (n1.length < 12) return ($('cpErr').textContent = 'Use at least 12 characters.');
+  if (n1 !== n2) return ($('cpErr').textContent = "The new passphrases don't match.");
+  const btn = $('cpBtn'); btn.disabled = true; btn.textContent = 'Re-encrypting…';
+  try {
+    await keyFromMeta(App.meta, o);
+    const { meta, key } = await newVaultMeta(n1);
+    const sealed = [];
+    for (const s of App.statements) { const rec = await seal(key, s, aadFor(s.id)); rec.updatedAt = new Date().toISOString(); sealed.push([s.id, rec]); }
+    for (const [id, rec] of sealed) await App.store.put(id, rec);
+    await App.store.setMeta(meta);
+    App.meta = meta; App.key = key;
+    const dev = readDevice();
+    if (dev) { try { const token = await tokenFromDevice(dev, o); await rememberDevice(dev.repo, token, n1); } catch (e) { forgetDevice(); } }
+    $('cpOld').value = $('cpNew').value = $('cpNew2').value = '';
+    $('cpErr').textContent = '';
+    toast('Passphrase changed. Every statement is now encrypted with the new one, and this device remembers the new passphrase.', 6000);
+  } catch (e) { $('cpErr').textContent = (e.status || e.code) ? writeError(e) + ' Some records may now use the new passphrase; try the change again before locking.' : e.message; }
+  finally { btn.disabled = false; btn.textContent = 'Change passphrase'; }
+});
+
+async function makeBackup() {
+  const items = [];
+  for (const s of App.statements) items.push({ id: s.id, rec: await seal(App.key, s, aadFor(s.id)) });
+  const { kdf, cipher, iter, salt, check } = App.meta;
+  return JSON.stringify({ format: 'lakeside-vault', version: 1, exportedAt: new Date().toISOString(), meta: { v: 1, kdf, cipher, iter, salt, check }, items });
+}
+async function openBackup(text, pass) {
+  let data; try { data = JSON.parse(text); } catch (e) { throw new Error("That file isn't a Lakeside backup."); }
+  if (!data || data.format !== 'lakeside-vault' || !data.meta) throw new Error("That file isn't a Lakeside backup.");
+  const key = await keyFromMeta(data.meta, pass).catch(() => { throw new Error("That passphrase doesn't open this backup."); });
+  const statements = [];
+  for (const it of data.items || []) statements.push(await unseal(key, it.rec, aadFor(it.id)));
+  return { meta: { ...data.meta, updatedAt: new Date().toISOString() }, key, statements };
+}
+$('bkExport').addEventListener('click', async () => {
+  const d = new Date(); await saveFile(`lakeside-vault-backup-${d.toISOString().slice(0, 10)}.json`, await makeBackup());
+});
+$('bkCopy').addEventListener('click', async () => {
+  const text = await makeBackup();
+  try { await navigator.clipboard.writeText(text); toast('Encrypted backup copied. Paste it into a text file ending in .json.'); }
+  catch (e) { toast("Couldn't copy automatically."); }
+});
+$('bkImport').addEventListener('click', async () => {
+  const f = $('bkFile').files[0], pass = $('bkPass').value; $('bkErr').textContent = '';
+  if (!f || !pass) return ($('bkErr').textContent = 'Choose the backup file and enter its passphrase.');
+  try {
+    const { statements } = await openBackup(await f.text(), pass);
+    let added = 0, skipped = 0;
+    for (const s of statements) { if (App.statements.find((x) => x.id === s.id)) { skipped++; continue; } await putStatement(s); added++; }
+    $('bkPass').value = ''; renderAll();
+    $('bkErr').textContent = '';
+    toast(`Added ${added} statement${added === 1 ? '' : 's'}${skipped ? `; ${skipped} already here were left as they are` : ''}.`, 5000);
+  } catch (e) { $('bkErr').textContent = e.code ? writeError(e) : e.message; }
+});
+
+boot();
+
+</script>
+</body>
+</html>
