@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Lakeside Preschool Board View</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a treasurer's ledger desk. Quiet lake-blue chrome, memo-style brief, dense tables with severity color only where attention is needed. */
+:root {
+  --paper: #f6f8f9;
+  --surface: #ffffff;
+  --ink: #15232b;
+  --muted: #5b6b74;
+  --line: #d9e1e5;
+  --lake: #1f5f7a;
+  --lake-soft: #e3eef3;
+  --good: #2f7d4f; --good-bg: #e4f2e9;
+  --warn: #9a6400; --warn-bg: #fbf0d9;
+  --bad: #b23a3a; --bad-bg: #f8e3e1;
+  --info-bg: #eef1f3;
+  --font-display: "Newsreader", Georgia, "Times New Roman", serif;
+  --font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --radius: 8px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f171b; --surface: #162127; --ink: #e4ecef; --muted: #93a4ad; --line: #2a3a42;
+    --lake: #7cbad3; --lake-soft: #1c3440;
+    --good: #7fcf9c; --good-bg: #173226; --warn: #e6b65c; --warn-bg: #3a2c12; --bad: #f08c84; --bad-bg: #3d1d1c; --info-bg: #1d2a31;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f171b; --surface: #162127; --ink: #e4ecef; --muted: #93a4ad; --line: #2a3a42;
+  --lake: #7cbad3; --lake-soft: #1c3440;
+  --good: #7fcf9c; --good-bg: #173226; --warn: #e6b65c; --warn-bg: #3a2c12; --bad: #f08c84; --bad-bg: #3d1d1c; --info-bg: #1d2a31;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--paper); color: var(--ink); font: 15px/1.5 var(--font-body); }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; text-wrap: balance; margin: 0; line-height: 1.2; }
+h1 { font-size: 1.6rem; }
+h2 { font-size: 1.3rem; }
+h3 { font-size: 1.05rem; font-family: var(--font-body); font-weight: 650; letter-spacing: .01em; }
+p { margin: 0; }
+.num, td.n, th.n { font-variant-numeric: tabular-nums; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); padding: .45rem .85rem; font-weight: 550; }
+button:hover { border-color: var(--lake); }
+button.primary { background: var(--lake); border-color: var(--lake); color: var(--surface); }
+button.primary:hover { filter: brightness(1.08); }
+button.ghost { background: transparent; border-color: transparent; color: var(--lake); padding-inline: .5rem; }
+button.danger { color: var(--bad); }
+button:disabled { opacity: .55; cursor: not-allowed; }
+:focus-visible { outline: 2px solid var(--lake); outline-offset: 2px; }
+input[type=password], input[type=text], select, textarea { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: .5rem .65rem; width: 100%; }
+textarea { min-height: 7rem; resize: vertical; line-height: 1.5; }
+label { font-weight: 600; font-size: .9rem; display: block; margin-bottom: .3rem; }
+.hint { color: var(--muted); font-size: .88rem; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
+
+/* top bar */
+header.top { background: var(--surface); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5; }
+header.top .wrap { display: flex; align-items: center; gap: 16px; min-height: 56px; flex-wrap: wrap; }
+.brand { display: flex; align-items: baseline; gap: 10px; margin-right: auto; }
+.brand b { font-family: var(--font-display); font-size: 1.25rem; font-weight: 600; }
+.brand span { color: var(--muted); font-size: .85rem; }
+nav.tabs { display: flex; gap: 2px; flex-wrap: wrap; }
+nav.tabs a { color: var(--muted); text-decoration: none; padding: .45rem .75rem; border-radius: 6px; font-weight: 600; font-size: .92rem; }
+nav.tabs a[aria-current="page"] { color: var(--lake); background: var(--lake-soft); }
+nav.tabs a:hover { color: var(--ink); }
+.lockpill { display: inline-flex; align-items: center; gap: 6px; font-size: .82rem; color: var(--muted); }
+.lockpill i { width: 8px; height: 8px; border-radius: 50%; background: var(--good); display: inline-block; }
+.banner { padding: .6rem .9rem; border-radius: var(--radius); font-size: .9rem; display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; }
+.banner.warn { background: var(--warn-bg); color: var(--ink); border-left: 4px solid var(--warn); }
+.banner.info { background: var(--info-bg); border-left: 4px solid var(--lake); }
+.banner.bad { background: var(--bad-bg); border-left: 4px solid var(--bad); }
+
+main { padding: 24px 0 64px; }
+.stack { display: flex; flex-direction: column; gap: 16px; }
+.row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.spread { justify-content: space-between; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
+.hidden { display: none !important; }
+
+/* lock screen */
+.gate { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; }
+.gate .card { width: min(440px, 100%); display: flex; flex-direction: column; gap: 14px; }
+.gate h1 { font-size: 1.8rem; }
+.gate .sub { color: var(--muted); }
+.check { display: flex; gap: 10px; align-items: flex-start; font-weight: 500; }
+.check input { width: auto; margin-top: 4px; }
+.err.note { color: var(--ink); background: var(--info-bg); padding: .5rem .65rem; border-radius: 6px; }
+.err { color: var(--bad); font-size: .9rem; min-height: 1.2em; }
+.meter { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.meter i { display: block; height: 100%; width: 0; background: var(--bad); transition: width .2s; }
+
+/* brief */
+.brief-head { display: flex; gap: 12px; align-items: end; flex-wrap: wrap; }
+.brief-head .field { min-width: 220px; }
+.memo { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 28px clamp(18px, 4vw, 40px); display: flex; flex-direction: column; gap: 26px; }
+.memo-title { display: flex; flex-direction: column; gap: 4px; border-bottom: 1px solid var(--line); padding-bottom: 16px; }
+.eyebrow { font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 650; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.kpi { border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+.kpi .k { font-size: .82rem; color: var(--muted); font-weight: 600; }
+.kpi .v { font-size: 1.45rem; font-weight: 650; font-variant-numeric: tabular-nums; }
+.kpi .s { font-size: .84rem; color: var(--muted); }
+.neg { color: var(--bad); }
+.pos { color: var(--good); }
+.pace { display: grid; gap: 10px; }
+.pace-row { display: grid; grid-template-columns: 120px 1fr 64px; gap: 12px; align-items: center; font-size: .9rem; }
+.pace-track { position: relative; height: 12px; background: var(--info-bg); border-radius: 6px; }
+.pace-track b { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 6px; background: var(--lake); max-width: 100%; }
+.pace-track b.over { background: var(--bad); }
+.pace-track u { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--ink); text-decoration: none; }
+.pace-track s { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--muted); opacity: .6; text-decoration: none; }
+.pace-legend { font-size: .8rem; color: var(--muted); display: flex; gap: 16px; flex-wrap: wrap; }
+.pace-legend span::before { content: ""; display: inline-block; width: 2px; height: 10px; margin-right: 6px; vertical-align: -1px; background: var(--ink); }
+.pace-legend span.ly::before { background: var(--muted); }
+.section { display: flex; flex-direction: column; gap: 10px; }
+.watch { display: flex; flex-direction: column; gap: 8px; }
+.wi { display: grid; grid-template-columns: 4px 1fr auto; gap: 12px; align-items: start; padding: 10px 12px 10px 0; border: 1px solid var(--line); border-radius: var(--radius); }
+.wi::before { content: ""; align-self: stretch; border-radius: var(--radius) 0 0 var(--radius); background: var(--muted); }
+.wi.over::before { background: var(--bad); }
+.wi.ahead::before, .wi.behind::before { background: var(--warn); }
+.wi.unbudgeted::before { background: var(--lake); }
+.wi.met::before { background: var(--good); }
+.wi .t { font-weight: 650; }
+.wi .d { color: var(--muted); font-size: .9rem; }
+.chip { font-size: .74rem; font-weight: 700; padding: .15rem .5rem; border-radius: 999px; white-space: nowrap; background: var(--info-bg); color: var(--muted); }
+.chip.over { background: var(--bad-bg); color: var(--bad); }
+.chip.ahead, .chip.behind { background: var(--warn-bg); color: var(--warn); }
+.chip.met { background: var(--good-bg); color: var(--good); }
+.chip.unbudgeted { background: var(--lake-soft); color: var(--lake); }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+th, td { padding: .45rem .6rem; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+th { font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 650; }
+td.n, th.n { text-align: right; white-space: nowrap; }
+.movers td:first-child { width: 60%; }
+.checks li { margin-bottom: 4px; }
+.checks { margin: 0; padding-left: 1.1rem; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+.saved-note { font-size: .82rem; color: var(--muted); }
+
+/* statements */
+.drop { border: 2px dashed var(--line); border-radius: var(--radius); padding: 28px; text-align: center; background: var(--surface); display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.drop.over { border-color: var(--lake); background: var(--lake-soft); }
+.queue { display: flex; flex-direction: column; gap: 10px; }
+.qi { display: grid; grid-template-columns: 1fr auto; gap: 8px 16px; align-items: center; }
+.qi .meta { color: var(--muted); font-size: .88rem; }
+.qi ul { margin: 4px 0 0; padding-left: 1.1rem; font-size: .88rem; }
+.cov { display: grid; gap: 6px; }
+.cov-row { display: grid; grid-template-columns: 96px repeat(12, 1fr); gap: 4px; align-items: center; font-size: .8rem; }
+.cov-row span.m { height: 26px; border-radius: 4px; background: var(--info-bg); display: grid; place-items: center; color: var(--muted); font-weight: 600; }
+.cov-row span.m.have { background: var(--lake); color: var(--surface); }
+.cov-row span.m.warn { box-shadow: inset 0 -3px 0 var(--warn); }
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.tablewrap table th, .tablewrap table td { white-space: nowrap; }
+.ledger th.name, .ledger td.name { position: sticky; left: 0; background: var(--surface); z-index: 1; min-width: 240px; white-space: normal; }
+.ledger tr.sec td { background: var(--info-bg); font-weight: 700; }
+.ledger tr.sec td.name { background: var(--info-bg); }
+.ledger tr.tot td { font-weight: 700; border-top: 2px solid var(--ink); }
+.ledger td.c-over { background: var(--bad-bg); color: var(--bad); font-weight: 650; }
+.ledger td.c-ahead, .ledger td.c-behind { background: var(--warn-bg); color: var(--warn); font-weight: 650; }
+.ledger td.c-met { background: var(--good-bg); color: var(--good); font-weight: 650; }
+.ledger th.mo { border-left: 1px solid var(--line); text-align: center; }
+.ledger td.first { border-left: 1px solid var(--line); }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: .82rem; color: var(--muted); align-items: center; }
+.yeartabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.yeartabs button[aria-pressed="true"] { background: var(--lake-soft); border-color: var(--lake); color: var(--lake); }
+ol.steps { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 8px; }
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--paper); padding: .6rem 1rem; border-radius: 6px; font-size: .9rem; z-index: 20; max-width: calc(100% - 32px); }
+input.amt { width: 7.5rem; text-align: right; font-variant-numeric: tabular-nums; padding: .3rem .5rem; }
+input.amt.bad { border-color: var(--bad); background: var(--bad-bg); }
+.field { display: flex; flex-direction: column; }
+code { font-size: .88em; background: var(--info-bg); padding: .05rem .3rem; border-radius: 4px; }
+.inline-confirm { display: inline-flex; gap: 6px; align-items: center; font-size: .85rem; }
+@media (max-width: 600px) {
+  .pace-row { grid-template-columns: 90px 1fr 48px; }
+  .cov-row { grid-template-columns: 70px repeat(12, 1fr); font-size: .65rem; }
+  .qi { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+</head>
+<body>
+<section id="gate" class="gate">
+  <form class="card" id="bGate" autocomplete="off">
+    <div class="stack" style="gap:6px">
+      <span class="eyebrow">Lakeside Preschool</span>
+      <h1>Board view</h1>
+    </div>
+    <p class="sub">The treasurer's running spreadsheet of income, expenses and budget. Enter the viewer password the treasurer gave you.</p>
+    <div><label for="bPass">Viewer password</label><input id="bPass" type="password" autocomplete="current-password" required></div>
+    <div class="err" id="bErr"></div>
+    <button class="primary" type="submit" id="bBtn">View the books</button>
+    <p class="hint">Figures are decrypted here, in your browser.</p>
+  </form>
+</section>
+
+<div id="app" class="hidden">
+  <header class="top">
+    <div class="wrap">
+      <div class="brand"><b>Lakeside Preschool</b><span id="bSub"></span></div>
+      <button type="button" id="bLock">Lock</button>
+    </div>
+  </header>
+  <main class="wrap stack">
+    <div class="kpis" id="bKpis"></div>
+    <div class="row spread">
+      <h1>Running spreadsheet</h1>
+      <button type="button" id="bXlsx" class="primary">Download Excel workbook</button>
+    </div>
+    <div class="yeartabs" id="yearTabs" role="group" aria-label="Fiscal year"></div>
+    <div class="legend">
+      <span class="chip over">Over budget</span><span class="chip ahead">Ahead of / behind pace</span><span class="chip met">Income budget met</span>
+      <span>Each month shows the year-to-date actual, the percentage of the annual budget, and the change since the prior statement.</span>
+    </div>
+    <div class="tablewrap"><table class="ledger" id="ledgerTable"></table></div>
+    <section class="stack hidden" id="bSummWrap">
+      <h2>Treasurer's summaries</h2>
+      <div class="stack" id="bSumm"></div>
+    </section>
+  </main>
+</div>
+<div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+<script>
+/* Lakeside core: statement parsing, analysis and brief generation. Pure functions, no DOM. */
+const LakesideCore = (() => {
+  const MONTHS = ['january','february','march','april','may','june','july','august','september','october','november','december'];
+  const MON_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const NUM_RE = /^\(?-?\$?(\d{1,3}(,\d{3})+|\d+)(\.\d+)?\)?$/;
+
+  const isNum = (s) => NUM_RE.test(s);
+  function toNum(s) {
+    const neg = /^\(.*\)$/.test(s) || s.startsWith('-') || s.startsWith('(-');
+    const v = Number(s.replace(/[(),$\-]/g, ''));
+    return neg ? -v : v;
+  }
+  const pad = (n) => String(n).padStart(2, '0');
+  const iso = (y, m, d) => `${y}-${pad(m)}-${pad(d)}`;
+  const fyOf = (y, m) => (m >= 7 ? `${y}-${y + 1}` : `${y - 1}-${y}`);
+  const fyMonthOf = (m) => ((m - 7 + 12) % 12) + 1;
+
+  // Split items into word tokens with estimated x-extents (pdf.js items are usually one run each).
+  function tokenize(items) {
+    const toks = [];
+    for (const it of items) {
+      const raw = it.str || '';
+      if (!raw.trim()) continue;
+      const len = raw.length || 1;
+      const re = /\S+/g; let m;
+      while ((m = re.exec(raw))) {
+        const x0 = it.x + (it.w * m.index) / len;
+        const x1 = it.x + (it.w * (m.index + m[0].length)) / len;
+        toks.push({ s: m[0], x0, x1, y: it.y, page: it.page || 0 });
+      }
+    }
+    return toks;
+  }
+
+  function groupLines(items) {
+    const toks = tokenize(items).sort((a, b) => a.page - b.page || b.y - a.y || a.x0 - b.x0);
+    const lines = [];
+    for (const t of toks) {
+      const last = lines[lines.length - 1];
+      if (last && last.page === t.page && Math.abs(last.y - t.y) < 3) last.toks.push(t);
+      else lines.push({ page: t.page, y: t.y, toks: [t] });
+    }
+    for (const l of lines) {
+      l.toks.sort((a, b) => a.x0 - b.x0);
+      l.text = l.toks.map((t) => t.s).join(' ');
+      // trailing numeric run = values; the rest = label
+      let i = l.toks.length;
+      while (i > 0 && isNum(l.toks[i - 1].s)) i--;
+      l.label = l.toks.slice(0, i).map((t) => t.s).join(' ').trim();
+      l.nums = l.toks.slice(i).map((t) => ({ v: toNum(t.s), r: t.x1 }));
+    }
+    return lines;
+  }
+
+  function parseDateWords(s) {
+    const m = s.match(/(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{1,2}),\s*(\d{4})/i);
+    if (!m) return null;
+    return iso(+m[3], MONTHS.indexOf(m[1].toLowerCase()) + 1, +m[2]);
+  }
+  function parseSlashDate(s) {
+    const m = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+    if (!m) return null;
+    let y = +m[3]; if (y < 100) y += 2000;
+    return iso(y, +m[1], +m[2]);
+  }
+
+  function median(a) { const s = [...a].sort((x, y) => x - y); return s.length ? s[Math.floor(s.length / 2)] : null; }
+
+  const FIELDS = ['actual', 'budget', 'variance', 'priorActual', 'priorBudget'];
+
+  function parseStatement(items, fileName = '') {
+    const lines = groupLines(items);
+    const warnings = [];
+    const st = {
+      income: [], expense: [], totals: {}, nonOp: { years: [], rows: [], total: null }, banks: [],
+      header: {}, source: { fileName },
+    };
+
+    // Column right edges from 5-value lines
+    const five = lines.filter((l) => l.nums.length === 5 && l.label);
+    const cols = five.length ? [0, 1, 2, 3, 4].map((i) => median(five.map((l) => l.nums[i].r))) : null;
+    const assign = (nums, n = 5) => {
+      const out = new Array(n).fill(null);
+      if (nums.length === n || !cols) { nums.slice(0, n).forEach((x, i) => (out[i] = x.v)); return out; }
+      for (const x of nums) {
+        let best = 0, bd = Infinity;
+        cols.forEach((c, i) => { const d = Math.abs(c - x.r); if (d < bd) { bd = d; best = i; } });
+        if (out[best] === null) out[best] = x.v; else { const free = out.indexOf(null); if (free >= 0) out[free] = x.v; }
+      }
+      return out;
+    };
+    const toRow = (name, nums) => { const v = assign(nums); const r = { name }; FIELDS.forEach((f, i) => (r[f] = v[i])); return r; };
+
+    let section = 'header';
+    let bankIdx = -1;
+    const headerText = [];
+    for (let li = 0; li < lines.length; li++) {
+      const l = lines[li];
+      const label = l.label;
+      const text = l.text;
+      if (/^Operating Income$/i.test(text)) { section = 'income'; continue; }
+      if (/^Operating Expenses$/i.test(text)) { section = 'expense'; continue; }
+      if (/Bank Accounts as of/i.test(text)) {
+        bankIdx++; section = 'bank';
+        st.banks[bankIdx] = { asOf: parseSlashDate(text), accounts: [] };
+        continue;
+      }
+      if (/^Non-Operating Items/i.test(text)) {
+        section = 'nonop';
+        st.nonOp.years = (text.match(/\d{4}-\d{4}/g) || []);
+        continue;
+      }
+      if (section === 'header') { headerText.push(text); continue; }
+      if (/^Total Income/i.test(label)) { st.totals.income = toRow('Total Income', l.nums); continue; }
+      if (/^Total Expenses/i.test(label)) { st.totals.expense = toRow('Total Expenses', l.nums); section = 'afterExpense'; continue; }
+      if (/^Net Operating Income/i.test(label)) { st.totals.net = toRow('Net Operating Income (Loss)', l.nums); continue; }
+      if (/^Non-Operating Income/i.test(label)) { st.nonOp.total = { name: label, values: assign(l.nums) }; section = 'afterNonop'; continue; }
+      if (section === 'income' || section === 'expense') {
+        if (!label) continue;
+        st[section].push(toRow(label, l.nums));
+        continue;
+      }
+      if (section === 'nonop' && label && l.nums.length) { st.nonOp.rows.push({ name: label, values: assign(l.nums) }); continue; }
+      if (section === 'bank' && label && l.nums.length) { st.banks[bankIdx].accounts.push({ name: label, value: l.nums[l.nums.length - 1].v }); continue; }
+    }
+
+    // Header facts
+    const ht = headerText.join('\n');
+    const endIdx = headerText.findIndex((t) => /Months? Ending/i.test(t));
+    st.header.monthsText = endIdx >= 0 ? headerText[endIdx] : '';
+    st.header.date = parseDateWords(endIdx >= 0 ? headerText.slice(endIdx, endIdx + 2).join(' ') : ht);
+    const fys = ht.match(/\d{4}-\d{4}(?= Budget)/g) || [];
+    st.header.fy = fys[0] || null;
+    st.header.priorFy = fys[1] || null;
+
+    // Period end: bank date is the most reliable; then header; then file name
+    let periodEnd = st.banks[0] && st.banks[0].asOf;
+    const fnm = fileName.match(/(\d{2})_(\d{2})_(\d{2,4})/);
+    const fileDate = fnm ? iso(+fnm[3] < 100 ? 2000 + +fnm[3] : +fnm[3], +fnm[1], +fnm[2]) : null;
+    if (!periodEnd) periodEnd = st.header.date || fileDate;
+    if (!periodEnd) throw new Error('Could not find the statement date. Is this a Lakeside income statement?');
+    const [py, pm] = periodEnd.split('-').map(Number);
+    st.periodEnd = periodEnd;
+    st.id = `${py}-${pad(pm)}`;
+    st.fy = fyOf(py, pm);
+    st.fyMonth = fyMonthOf(pm);
+
+    if (st.header.date && st.header.date !== periodEnd) {
+      warnings.push({ level: 'warn', code: 'header-date', msg: `The statement heading says ${fmtDate(st.header.date)}, but the bank balances and numbers are as of ${fmtDate(periodEnd)}. The heading looks stale; using ${fmtDate(periodEnd)}.` });
+    }
+    if (st.header.fy && st.header.fy !== st.fy) {
+      warnings.push({ level: 'warn', code: 'fy', msg: `Budget column is labelled ${st.header.fy}, but ${fmtDate(periodEnd)} falls in fiscal year ${st.fy}.` });
+    }
+    if (fileDate && fileDate !== periodEnd) {
+      warnings.push({ level: 'info', code: 'file-date', msg: `File name suggests ${fmtDate(fileDate)}; statement content is ${fmtDate(periodEnd)}.` });
+    }
+    if (!st.income.length || !st.expense.length || !st.totals.income || !st.totals.expense) {
+      throw new Error('This PDF does not look like a Lakeside income statement (could not find the income and expense sections).');
+    }
+
+    // Arithmetic checks
+    const sum = (rows, f) => rows.reduce((a, r) => a + (r[f] || 0), 0);
+    const tol = (n) => Math.max(3, Math.ceil(n * 0.6));
+    for (const [sec, tot, lbl] of [['income', 'income', 'Total Income'], ['expense', 'expense', 'Total Expenses']]) {
+      for (const f of ['actual', 'budget']) {
+        const s = sum(st[sec], f), t = st.totals[tot][f];
+        if (t != null && Math.abs(s - t) > tol(st[sec].length)) warnings.push({ level: 'warn', code: 'sum', msg: `${lbl} (${f === 'actual' ? 'YTD actual' : 'budget'}) is ${money(t)}, but the lines add up to ${money(s)}.` });
+      }
+    }
+    if (st.totals.net && st.totals.net.actual != null) {
+      const calc = st.totals.income.actual - st.totals.expense.actual;
+      if (Math.abs(calc - st.totals.net.actual) > 3) warnings.push({ level: 'warn', code: 'net', msg: `Net operating income is shown as ${money(st.totals.net.actual)}, but income minus expenses is ${money(calc)}.` });
+    }
+    for (const r of [...st.income, ...st.expense]) {
+      if (r.actual != null && r.budget != null && r.variance != null && Math.abs(r.actual - r.budget - r.variance) > 2) {
+        warnings.push({ level: 'info', code: 'variance', msg: `${r.name}: variance column (${money(r.variance)}) doesn't equal actual minus budget (${money(r.actual - r.budget)}).` });
+      }
+    }
+    st.warnings = warnings;
+    return st;
+  }
+
+  // ---------- formatting ----------
+  function money(v, opts = {}) {
+    if (v == null || Number.isNaN(v)) return '—';
+    const s = Math.abs(Math.round(v)).toLocaleString('en-US');
+    const sign = v < 0 ? '−' : (opts.plus && v > 0 ? '+' : '');
+    return `${sign}$${s}`;
+  }
+  const pct = (v, d = 0) => (v == null || !isFinite(v) ? '—' : `${(v * 100).toFixed(d)}%`);
+  function fmtDate(isoStr, style = 'long') {
+    if (!isoStr) return '—';
+    const [y, m, d] = isoStr.split('-').map(Number);
+    if (style === 'short') return `${m}/${d}/${String(y).slice(2)}`;
+    if (style === 'month') return `${MON_SHORT[m - 1]} ${y}`;
+    return `${MONTHS[m - 1][0].toUpperCase()}${MONTHS[m - 1].slice(1)} ${d}, ${y}`;
+  }
+
+  // ---------- analysis ----------
+  const byPeriod = (a, b) => a.periodEnd.localeCompare(b.periodEnd);
+  function prevStatement(all, s) {
+    return all.find((x) => x.fy === s.fy && x.fyMonth === s.fyMonth - 1) || null;
+  }
+  function priorStatementAny(all, s) {
+    const earlier = all.filter((x) => x.periodEnd < s.periodEnd).sort(byPeriod);
+    return earlier[earlier.length - 1] || null;
+  }
+  const bankTotal = (b) => (b ? b.accounts.reduce((a, x) => a + (x.value || 0), 0) : null);
+
+  // Contra-income lines (negative budget, e.g. tuition remission) behave like costs.
+  function lineKind(sec, r) {
+    if (sec === 'expense') return 'cost';
+    if ((r.budget || 0) < 0 || (r.budget === 0 && (r.actual || 0) < 0)) return 'contra';
+    return 'income';
+  }
+
+  function assessLine(sec, r, fyMonth) {
+    const pace = fyMonth / 12;
+    const kind = lineKind(sec, r);
+    const a = r.actual || 0, b = r.budget || 0;
+    const res = { kind, pace, pctBudget: b ? a / b : null, lyPct: null, expected: pace, status: 'ok', note: '', impact: 0 };
+    if (r.priorBudget && r.priorActual != null) {
+      const ly = r.priorActual / r.priorBudget;
+      if (isFinite(ly) && ly >= 0 && ly <= 1.6) { res.lyPct = ly; res.expected = ly; }
+    }
+    if (!b) {
+      if (Math.abs(a) >= 250) {
+        res.status = 'unbudgeted';
+        res.impact = Math.abs(a);
+        res.note = kind === 'income' ? `${money(a)} received with no budget line.` : `${money(Math.abs(a))} spent with no budget.`;
+      }
+      return res;
+    }
+    const p = res.pctBudget;
+    const expectedAmt = res.expected * b;
+    const gap = a - expectedAmt; // positive => more than expected
+    const basis = res.lyPct != null ? `last year at this point was ${pct(res.lyPct)}` : `${pct(pace)} of the year has passed`;
+    if (kind === 'income') {
+      if (p >= 1) { res.status = 'met'; res.note = `Already at ${pct(p)} of the annual budget.`; res.impact = a - b; }
+      else if (res.expected - p > 0.15 && -gap >= 1000) { res.status = 'behind'; res.impact = -gap; res.note = `At ${pct(p)} of budget; ${basis}. About ${money(-gap)} behind that pace.`; }
+    } else {
+      const absA = Math.abs(a), absB = Math.abs(b), absGap = Math.abs(a) - Math.abs(expectedAmt);
+      if (absA > absB && absA - absB >= 250) { res.status = 'over'; res.impact = absA - absB; res.note = `${money(absA - absB)} over the annual budget of ${money(absB)} (${pct(p)}).`; }
+      else if (p - res.expected > 0.15 && absGap >= 500) { res.status = 'ahead'; res.impact = absGap; res.note = `At ${pct(p)} of budget; ${basis}. About ${money(absGap)} ahead of that pace.`; }
+    }
+    return res;
+  }
+
+  function monthlyActivity(s, prev) {
+    const map = {};
+    if (!prev && s.fyMonth !== 1) return null;
+    for (const sec of ['income', 'expense']) {
+      for (const r of s[sec]) {
+        const p = prev ? (prev[sec].find((x) => x.name === r.name) || {}).actual || 0 : 0;
+        map[`${sec}:${r.name}`] = (r.actual || 0) - p;
+      }
+    }
+    return map;
+  }
+
+  function buildBrief(s, all) {
+    const prev = prevStatement(all, s);
+    const lastAny = priorStatementAny(all, s);
+    const pace = s.fyMonth / 12;
+    const T = s.totals;
+    const brief = { id: s.id, title: `Budget brief — ${fmtDate(s.periodEnd)}`, period: s.periodEnd, fy: s.fy, fyMonth: s.fyMonth, pace };
+
+    // Headline
+    const inc = T.income, exp = T.expense, net = T.net || { actual: inc.actual - exp.actual, budget: inc.budget - exp.budget, priorActual: (inc.priorActual || 0) - (exp.priorActual || 0) };
+    brief.headline = {
+      income: { actual: inc.actual, budget: inc.budget, pct: inc.budget ? inc.actual / inc.budget : null, lastYear: inc.priorActual, lyPct: inc.priorBudget ? inc.priorActual / inc.priorBudget : null },
+      expense: { actual: exp.actual, budget: exp.budget, pct: exp.budget ? exp.actual / exp.budget : null, lastYear: exp.priorActual, lyPct: exp.priorBudget ? exp.priorActual / exp.priorBudget : null },
+      net: { actual: net.actual, budget: net.budget, lastYear: net.priorActual },
+    };
+
+    // Month activity
+    const act = monthlyActivity(s, prev);
+    brief.monthly = null;
+    if (act) {
+      const incM = s.income.reduce((a, r) => a + act[`income:${r.name}`], 0);
+      const expM = s.expense.reduce((a, r) => a + act[`expense:${r.name}`], 0);
+      const movers = Object.entries(act).filter(([, v]) => Math.abs(v) >= 1).map(([k, v]) => { const [sec, ...n] = k.split(':'); return { sec, name: n.join(':'), value: v }; })
+        .sort((a, b) => Math.abs(b.value) - Math.abs(a.value)).slice(0, 6);
+      brief.monthly = { income: incM, expense: expM, net: incM - expM, movers, basis: prev ? prev.periodEnd : null };
+    }
+
+    // Watch list
+    const watch = [], good = [];
+    for (const sec of ['income', 'expense']) {
+      for (const r of s[sec]) {
+        const a = assessLine(sec, r, s.fyMonth);
+        const item = { sec, name: r.name, actual: r.actual, budget: r.budget, ...a };
+        if (a.status === 'unbudgeted' && a.kind === 'income') good.push(item);
+        else if (['over', 'ahead', 'behind', 'unbudgeted'].includes(a.status)) watch.push(item);
+        else if (a.status === 'met') good.push(item);
+      }
+    }
+    const sevRank = { over: 0, behind: 1, ahead: 2, unbudgeted: 3 };
+    watch.sort((a, b) => sevRank[a.status] - sevRank[b.status] || b.impact - a.impact);
+    brief.watch = watch;
+    brief.good = good;
+
+    // Cash
+    const nowB = s.banks[0], yearAgoB = s.banks[1];
+    const prevB = lastAny && lastAny.banks[0];
+    brief.cash = {
+      asOf: nowB ? nowB.asOf : null,
+      total: bankTotal(nowB),
+      prevTotal: bankTotal(prevB), prevAsOf: prevB ? prevB.asOf : null,
+      yearAgoTotal: bankTotal(yearAgoB), yearAgoAsOf: yearAgoB ? yearAgoB.asOf : null,
+      accounts: (nowB ? nowB.accounts : []).map((acc) => ({
+        name: acc.name, value: acc.value,
+        prev: prevB ? ((prevB.accounts.find((x) => x.name === acc.name) || {}).value ?? null) : null,
+        yearAgo: yearAgoB ? ((yearAgoB.accounts.find((x) => x.name === acc.name) || {}).value ?? null) : null,
+      })),
+    };
+
+    // Non-operating (current FY column)
+    const ci = s.nonOp.years.indexOf(s.fy);
+    const col = ci >= 0 ? ci : 0;
+    brief.nonOp = s.nonOp.rows.filter((r) => r.values[col]).map((r) => ({ name: r.name, value: r.values[col] }));
+
+    // Checks
+    const checks = [...(s.warnings || [])];
+    if (s.fyMonth > 1 && !prev) checks.push({ level: 'info', code: 'gap', msg: `No statement saved for the previous month, so month-only figures can't be calculated. Add it to see this month's activity.` });
+    if (prev) {
+      const changed = [];
+      for (const sec of ['income', 'expense']) for (const r of s[sec]) {
+        const p = prev[sec].find((x) => x.name === r.name);
+        if (p && p.budget != null && r.budget != null && p.budget !== r.budget) changed.push(`${r.name} ${money(p.budget)} → ${money(r.budget)}`);
+        if (!p) checks.push({ level: 'info', code: 'newline', msg: `New line on this statement: ${r.name}.` });
+      }
+      if (changed.length) checks.push({ level: 'info', code: 'budget-change', msg: `Budget figures changed since last month: ${changed.join('; ')}.` });
+    }
+    brief.checks = checks;
+    return brief;
+  }
+
+  function briefToText(s, b) {
+    const L = [];
+    const h = b.headline;
+    L.push(`LAKESIDE PRESCHOOL — BUDGET BRIEF`);
+    L.push(`Through ${fmtDate(s.periodEnd)} · Fiscal year ${s.fy}, month ${s.fyMonth} of 12 (${pct(b.pace)} of the year)`);
+    L.push('');
+    L.push(`HEADLINE`);
+    L.push(`• Net operating income year-to-date: ${money(h.net.actual)} (annual budget ${money(h.net.budget)}; same point last year ${money(h.net.lastYear)}).`);
+    L.push(`• Income: ${money(h.income.actual)}, ${pct(h.income.pct)} of the ${money(h.income.budget)} budget${h.income.lyPct != null ? ` (last year at this point: ${pct(h.income.lyPct)})` : ''}.`);
+    L.push(`• Expenses: ${money(h.expense.actual)}, ${pct(h.expense.pct)} of the ${money(h.expense.budget)} budget${h.expense.lyPct != null ? ` (last year at this point: ${pct(h.expense.lyPct)})` : ''}.`);
+    if (b.cash.total != null) L.push(`• Cash across accounts: ${money(b.cash.total)}${b.cash.prevTotal != null ? ` (${money(b.cash.total - b.cash.prevTotal, { plus: true })} since ${fmtDate(b.cash.prevAsOf, 'short')})` : ''}${b.cash.yearAgoTotal != null ? `; a year ago ${money(b.cash.yearAgoTotal)}` : ''}.`);
+    L.push('');
+    if (b.monthly) {
+      L.push(`THIS MONTH`);
+      L.push(`• Income ${money(b.monthly.income)}, expenses ${money(b.monthly.expense)}, net ${money(b.monthly.net, { plus: true })}.`);
+      for (const m of b.monthly.movers) L.push(`  – ${m.name}: ${money(m.value, { plus: true })}`);
+      L.push('');
+    }
+    L.push(`WATCH LIST`);
+    if (!b.watch.length) L.push('• Nothing outside the expected range.');
+    for (const w of b.watch) L.push(`• ${w.name} [${STATUS_LABEL[w.status]}]: ${w.note}`);
+    if (b.good.length) { L.push(''); L.push('INCOME AT OR ABOVE BUDGET'); for (const g of b.good) L.push(`• ${g.name}: ${g.note}`); }
+    L.push('');
+    L.push(`CASH BY ACCOUNT (as of ${fmtDate(b.cash.asOf, 'short')})`);
+    for (const a of b.cash.accounts) L.push(`• ${a.name}: ${money(a.value)}${a.prev != null ? (a.value === a.prev ? ' (no change)' : ` (${money(a.value - a.prev, { plus: true })} vs last report)`) : ''}`);
+    if (b.nonOp.length) { L.push(''); L.push(`NON-OPERATING (${s.fy})`); for (const n of b.nonOp) L.push(`• ${n.name}: ${money(n.value)}`); }
+    if (s.narrative) { L.push(''); L.push('SUMMARY'); L.push(s.narrative.trim()); }
+    if (s.notes) { L.push(''); L.push('TREASURER NOTES'); L.push(s.notes.trim()); }
+    if (b.checks.length) { L.push(''); L.push('DATA CHECKS'); for (const c of b.checks) L.push(`• ${c.msg}`); }
+    return L.join('\n');
+  }
+
+  const STATUS_LABEL = { over: 'Over budget', ahead: 'Spending ahead of pace', behind: 'Behind pace', unbudgeted: 'Not budgeted', met: 'Budget met', ok: 'On track' };
+
+  // ---------- spreadsheet model ----------
+  function fiscalYears(all) { return [...new Set(all.map((s) => s.fy))].sort().reverse(); }
+  function yearModel(all, fy) {
+    const sts = all.filter((s) => s.fy === fy).sort(byPeriod);
+    const latest = sts[sts.length - 1];
+    const rows = { income: [], expense: [] };
+    for (const sec of ['income', 'expense']) {
+      const names = [];
+      for (const s of sts) for (const r of s[sec]) if (!names.includes(r.name)) names.push(r.name);
+      for (const name of names) {
+        const budget = latest ? ((latest[sec].find((x) => x.name === name) || {}).budget ?? null) : null;
+        const cells = sts.map((s, i) => {
+          const r = s[sec].find((x) => x.name === name);
+          const prevS = sts.find((x) => x.fyMonth === s.fyMonth - 1);
+          const pr = prevS ? prevS[sec].find((x) => x.name === name) : null;
+          const ytd = r ? r.actual : null;
+          const b = r ? r.budget : budget;
+          return { ytd, budget: b, pct: b ? (ytd || 0) / b : null, delta: s.fyMonth === 1 ? ytd : (prevS ? (ytd || 0) - ((pr && pr.actual) || 0) : null), assess: r ? assessLine(sec, r, s.fyMonth) : null };
+        });
+        rows[sec].push({ name, budget, cells });
+      }
+    }
+    const totals = ['income', 'expense', 'net'].map((k) => ({ key: k, cells: sts.map((s) => s.totals[k] || null) }));
+    const accounts = [];
+    for (const s of sts) for (const a of (s.banks[0] ? s.banks[0].accounts : [])) if (!accounts.includes(a.name)) accounts.push(a.name);
+    const banks = accounts.map((name) => ({ name, cells: sts.map((s) => { const a = s.banks[0] && s.banks[0].accounts.find((x) => x.name === name); return a ? a.value : null; }) }));
+    const nonOpNames = [];
+    for (const s of sts) for (const r of s.nonOp.rows) if (!nonOpNames.includes(r.name)) nonOpNames.push(r.name);
+    const nonOp = nonOpNames.map((name) => ({ name, cells: sts.map((s) => { const i = s.nonOp.years.indexOf(s.fy); const r = s.nonOp.rows.find((x) => x.name === name); return r ? r.values[i >= 0 ? i : 0] : null; }) }));
+    return { fy, statements: sts, rows, totals, banks, nonOp };
+  }
+
+
+  // ---------- approved budgets ----------
+  const priorFyOf = (fy) => { const [a, b] = fy.split('-').map(Number); return `${a - 1}-${b - 1}`; };
+  const nextFyOf = (fy) => { const [a, b] = fy.split('-').map(Number); return `${a + 1}-${b + 1}`; };
+  const sumSec = (rows, f) => rows.reduce((a, r) => a + (r[f] || 0), 0);
+
+  // budgets: { 'YYYY-YYYY': { income: {name: amount}, expense: {name: amount}, approvedOn, note } }
+  function withBudgets(statements, budgets) {
+    if (!budgets || !Object.keys(budgets).length) return statements;
+    return statements.map((s) => {
+      const cur = budgets[s.fy], prior = budgets[priorFyOf(s.fy)];
+      if (!cur && !prior) return s;
+      const c = JSON.parse(JSON.stringify(s));
+      const diffs = [];
+      for (const sec of ['income', 'expense']) {
+        for (const r of c[sec]) {
+          if (cur && cur[sec] && Object.prototype.hasOwnProperty.call(cur[sec], r.name)) {
+            const nb = cur[sec][r.name];
+            if ((r.budget || 0) !== nb) diffs.push({ name: r.name, statement: r.budget, approved: nb });
+            r.statementBudget = r.budget;
+            r.budget = nb;
+            r.variance = (r.actual || 0) - nb;
+          }
+          if (prior && prior[sec] && Object.prototype.hasOwnProperty.call(prior[sec], r.name)) r.priorBudget = prior[sec][r.name];
+        }
+      }
+      const T = c.totals;
+      if (cur) {
+        T.income.budget = sumSec(c.income, 'budget'); T.income.variance = T.income.actual - T.income.budget;
+        T.expense.budget = sumSec(c.expense, 'budget'); T.expense.variance = T.expense.actual - T.expense.budget;
+        if (T.net) { T.net.budget = T.income.budget - T.expense.budget; T.net.variance = T.net.actual - T.net.budget; }
+        c.budgetSource = { kind: 'approved', approvedOn: cur.approvedOn || null };
+      }
+      if (prior) {
+        T.income.priorBudget = sumSec(c.income, 'priorBudget');
+        T.expense.priorBudget = sumSec(c.expense, 'priorBudget');
+        if (T.net) T.net.priorBudget = T.income.priorBudget - T.expense.priorBudget;
+      }
+      if (diffs.length) {
+        const ex = diffs.slice(0, 4).map((d) => `${d.name}: statement ${money(d.statement)}, approved ${money(d.approved)}`).join('; ');
+        c.warnings = [...(c.warnings || []), { level: 'info', code: 'budget-override', msg: `Using the approved FY ${s.fy} budget. The bookkeeper's budget column differs on ${diffs.length} line${diffs.length === 1 ? '' : 's'} (${ex}${diffs.length > 4 ? '; …' : ''}). You may want to send the approved figures to the bookkeeper.` }];
+      }
+      return c;
+    });
+  }
+
+  // Lines and reference figures for editing a fiscal year's budget.
+  function budgetWorksheet(statements, budgets, fy) {
+    const sts = statements.filter((s) => s.fy === fy).sort(byPeriod);
+    const latest = sts[sts.length - 1] || null;
+    const pfy = priorFyOf(fy);
+    const prevSts = statements.filter((s) => s.fy === pfy).sort(byPeriod);
+    const prevLatest = prevSts[prevSts.length - 1] || null;
+    const prevFull = prevSts.find((s) => s.fyMonth === 12) || null;
+    const cur = budgets[fy] || null, prior = budgets[pfy] || null;
+    const out = {};
+    for (const sec of ['income', 'expense']) {
+      const names = [];
+      const add = (n) => { if (!names.includes(n)) names.push(n); };
+      if (latest) latest[sec].forEach((r) => add(r.name));
+      if (cur && cur[sec]) Object.keys(cur[sec]).forEach(add);
+      if (!latest && prevLatest) prevLatest[sec].forEach((r) => add(r.name));
+      if (prior && prior[sec]) Object.keys(prior[sec]).forEach(add);
+      if (!names.length) { const any = [...statements].sort(byPeriod).pop(); if (any) any[sec].forEach((r) => add(r.name)); }
+      out[sec] = names.map((name) => {
+        const st = latest ? latest[sec].find((r) => r.name === name) : null;
+        const pst = prevLatest ? prevLatest[sec].find((r) => r.name === name) : null;
+        const pfull = prevFull ? prevFull[sec].find((r) => r.name === name) : null;
+        return {
+          name,
+          approved: cur && cur[sec] && name in cur[sec] ? cur[sec][name] : null,
+          statement: st ? st.budget : null,
+          lastYearBudget: prior && prior[sec] && name in prior[sec] ? prior[sec][name] : (pst ? pst.budget : (st ? st.priorBudget : null)),
+          lastYearActual: pfull ? pfull.actual : null,
+          ytd: st ? st.actual : null,
+        };
+      });
+    }
+    return { fy, rows: out, latest, prevFull, hasStatements: sts.length > 0 };
+  }
+
+  return { withBudgets, budgetWorksheet, priorFyOf, nextFyOf, parseStatement, groupLines, buildBrief, briefToText, yearModel, fiscalYears, assessLine, money, pct, fmtDate, STATUS_LABEL, prevStatement, bankTotal, MON_SHORT };
+})();
+if (typeof module !== 'undefined') module.exports = LakesideCore;
+
+</script>
+<script>
+const C = LakesideCore;
+const $ = (id) => document.getElementById(id);
+const ITER = 600000;
+
+// ---------- helpers ----------
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const money = C.money, pct = C.pct, fmtDate = C.fmtDate;
+const byPeriod = (a, b) => a.periodEnd.localeCompare(b.periodEnd);
+const fyLabel = (fy) => fy ? fy.replace('-', '–') : '';
+function toast(msg, ms = 3200) { const t = $('toast'); t.textContent = msg; t.classList.remove('hidden'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.add('hidden'), ms); }
+function withTimeout(p, ms, msg) { let t; return Promise.race([p, new Promise((_, rej) => { t = setTimeout(() => rej(new Error(msg || 'Timed out')), ms); })]).finally(() => clearTimeout(t)); }
+function show(el, on = true) { (typeof el === 'string' ? $(el) : el).classList.toggle('hidden', !on); }
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// ---------- crypto ----------
+const te = new TextEncoder(), td = new TextDecoder();
+function b64(buf) { const u = buf instanceof Uint8Array ? buf : new Uint8Array(buf); let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); }
+function unb64(s) { const bin = atob(s); const u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; }
+async function deriveKey(pass, saltB64, iter) {
+  const base = await crypto.subtle.importKey('raw', te.encode(pass.normalize('NFKC')), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: unb64(saltB64), iterations: iter, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+}
+async function seal(key, obj, aad) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv, additionalData: te.encode(aad) }, key, te.encode(JSON.stringify(obj)));
+  return { v: 1, iv: b64(iv), ct: b64(ct) };
+}
+async function unseal(key, rec, aad) {
+  const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(rec.iv), additionalData: te.encode(aad) }, key, unb64(rec.ct));
+  return JSON.parse(td.decode(pt));
+}
+
+async function saveFile(filename, data) {
+  const blob = data instanceof Blob ? data : new Blob([data], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
+  return true;
+}
+
+// ---------- ledger + workbook ----------
+function yearTabsHTML(fys, current) {
+  return fys.map((fy) => `<button type="button" data-fy="${fy}" aria-pressed="${fy === current}">FY ${esc(fyLabel(fy))}</button>`).join('');
+}
+function ledgerHTML(statements, fy, opts = {}) {
+  if (!fy) return `<tbody><tr><td class="hint">No statements yet.</td></tr></tbody>`;
+  const m = C.yearModel(statements, fy);
+  const sts = m.statements;
+  const head1 = `<tr><th class="name" rowspan="2">Line item</th><th class="n" rowspan="2">Annual budget</th>${sts.map((s) => `<th class="mo" colspan="3">${esc(fmtDate(s.periodEnd, 'month'))}</th>`).join('')}</tr>`;
+  const head2 = `<tr>${sts.map(() => `<th class="n first">YTD</th><th class="n">% bud.</th><th class="n">Change</th>`).join('')}</tr>`;
+  const cellsFor = (cells) => cells.map((c) => {
+    const cls = c.assess && ['over', 'ahead', 'behind', 'met'].includes(c.assess.status) ? 'c-' + c.assess.status : '';
+    return `<td class="n first">${money(c.ytd)}</td><td class="n ${cls}">${pct(c.pct)}</td><td class="n">${c.delta == null ? '—' : money(c.delta, { plus: true })}</td>`;
+  }).join('');
+  const totRow = (label, key) => {
+    const t = m.totals.find((x) => x.key === key).cells;
+    const budget = t[t.length - 1] ? t[t.length - 1].budget : null;
+    return `<tr class="tot"><td class="name">${label}</td><td class="n">${money(budget)}</td>${t.map((c, i) => { const prev = sts[i].fyMonth === 1 ? 0 : (sts.findIndex((x) => x.fyMonth === sts[i].fyMonth - 1) >= 0 ? (t[sts.findIndex((x) => x.fyMonth === sts[i].fyMonth - 1)] || {}).actual : null); return `<td class="n first">${money(c && c.actual)}</td><td class="n">${key !== 'net' && c && c.budget ? pct(c.actual / c.budget) : '—'}</td><td class="n">${prev == null || !c ? '—' : money(c.actual - prev, { plus: true })}</td>`; }).join('')}</tr>`;
+  };
+  const span = 2 + sts.length * 3;
+  const secRow = (t) => `<tr class="sec"><td class="name">${t}</td><td colspan="${span - 1}"></td></tr>`;
+  const lineRows = (rows) => rows.map((r) => `<tr><td class="name">${esc(r.name)}</td><td class="n">${money(r.budget)}</td>${cellsFor(r.cells)}</tr>`).join('');
+  const simpleRows = (rows) => rows.map((r) => `<tr><td class="name">${esc(r.name)}</td><td class="n"></td>${r.cells.map((v) => `<td class="n first">${money(v)}</td><td></td><td></td>`).join('')}</tr>`).join('');
+  const bankTot = `<tr class="tot"><td class="name">Total cash</td><td></td>${sts.map((s) => `<td class="n first">${money(C.bankTotal(s.banks[0]))}</td><td></td><td></td>`).join('')}</tr>`;
+  return `<thead>${head1}${head2}</thead><tbody>
+    ${secRow('Operating income')}${lineRows(m.rows.income)}${totRow('Total income', 'income')}
+    ${secRow('Operating expenses')}${lineRows(m.rows.expense)}${totRow('Total expenses', 'expense')}
+    ${totRow('Net operating income (loss)', 'net')}
+    ${m.nonOp.length ? secRow(`Non-operating items (FY ${esc(fyLabel(m.fy))})`) + simpleRows(m.nonOp) : ''}
+    ${opts.banks === false || !m.banks.length ? '' : secRow('Bank accounts') + simpleRows(m.banks) + bankTot}</tbody>`;
+}
+
+function longRows(statements, opts = {}) {
+  const rows = [['Period end', 'Fiscal year', 'FY month', 'Section', 'Line item', 'YTD actual', 'Annual budget', 'Variance', 'Prior-year YTD', 'Prior-year budget', 'Change since prior statement']];
+  for (const s of statements) {
+    const prev = C.prevStatement(statements, s);
+    for (const sec of ['income', 'expense']) for (const r of s[sec]) {
+      const p = prev ? (prev[sec].find((x) => x.name === r.name) || {}).actual || 0 : 0;
+      const delta = s.fyMonth === 1 ? r.actual : prev ? (r.actual || 0) - p : null;
+      rows.push([s.periodEnd, s.fy, s.fyMonth, sec === 'income' ? 'Operating income' : 'Operating expenses', r.name, r.actual, r.budget, r.variance, r.priorActual, r.priorBudget, delta]);
+    }
+    for (const [k, lbl] of [['income', 'Total Income'], ['expense', 'Total Expenses'], ['net', 'Net Operating Income (Loss)']]) { const t = s.totals[k]; if (t) rows.push([s.periodEnd, s.fy, s.fyMonth, 'Totals', lbl, t.actual, t.budget, t.variance, t.priorActual, t.priorBudget, null]); }
+    const ci = Math.max(0, s.nonOp.years.indexOf(s.fy));
+    for (const r of s.nonOp.rows) rows.push([s.periodEnd, s.fy, s.fyMonth, 'Non-operating', r.name, r.values[ci], null, null, r.values[ci + 1] ?? null, null, null]);
+    if (opts.banks !== false) for (const a of (s.banks[0] ? s.banks[0].accounts : [])) rows.push([s.periodEnd, s.fy, s.fyMonth, 'Bank balance', a.name, a.value, null, null, s.banks[1] ? ((s.banks[1].accounts.find((x) => x.name === a.name) || {}).value ?? null) : null, null, null]);
+  }
+  return rows;
+}
+const csvCell = (v) => (v == null ? '' : /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v));
+const FILLS = { over: 'FFF4CCCC', ahead: 'FFFFEB9C', behind: 'FFFFEB9C', met: 'FFC6EFCE', head: 'FFDCE9EF', sec: 'FFEEF1F3' };
+async function buildWorkbook(statements, opts = {}) {
+  if (typeof ExcelJS === 'undefined') throw new Error("The spreadsheet library didn't load. Reload the page and try again, or use Copy as CSV.");
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'Lakeside Treasury'; wb.created = new Date();
+  const fill = (cell, argb) => { cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb } }; };
+  const NUM = '#,##0;[Red]-#,##0', PCT = '0%';
+  const col = (n) => { let s = ''; n++; while (n) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); } return s; };
+
+  for (const fy of C.fiscalYears(statements)) {
+    const m = C.yearModel(statements, fy); const sts = m.statements;
+    const ws = wb.addWorksheet(fy, { views: [{ state: 'frozen', xSplit: 2, ySplit: 4 }] });
+    ws.getCell('A1').value = `Lakeside Preschool, Inc. — FY ${fy} running statement`; ws.getCell('A1').font = { bold: true, size: 14 };
+    ws.getCell('A2').value = `Built from the bookkeeper's monthly income statements. % of budget is shaded: red = over annual budget, yellow = ahead of (expenses) or behind (income) the expected pace, green = income budget met. Generated ${new Date().toLocaleDateString('en-US')}.`;
+    ws.getCell('A2').font = { italic: true, color: { argb: 'FF5B6B74' } };
+    const hdr = ws.getRow(4);
+    hdr.getCell(1).value = 'Line item'; hdr.getCell(2).value = 'Approved budget';
+    sts.forEach((s, i) => { const c = 3 + i * 3; hdr.getCell(c).value = `YTD actual through ${fmtDate(s.periodEnd, 'short')}`; hdr.getCell(c + 1).value = '% of budget'; hdr.getCell(c + 2).value = 'Change from last report'; });
+    hdr.eachCell((c) => { c.font = { bold: true }; c.alignment = { wrapText: true, vertical: 'middle' }; fill(c, FILLS.head); });
+    hdr.height = 44;
+    ws.getColumn(1).width = 42; ws.getColumn(2).width = 14;
+    sts.forEach((_, i) => { ws.getColumn(3 + i * 3).width = 14; ws.getColumn(4 + i * 3).width = 10; ws.getColumn(5 + i * 3).width = 13; });
+    let r = 5;
+    const secHead = (t) => { const row = ws.getRow(r++); row.getCell(1).value = t; row.getCell(1).font = { bold: true }; for (let c = 1; c <= 2 + sts.length * 3; c++) fill(row.getCell(c), FILLS.sec); };
+    const prevIdx = (i) => sts.findIndex((x) => x.fyMonth === sts[i].fyMonth - 1);
+    const writeLine = (name, budget, vals, assess) => {
+      const row = ws.getRow(r); row.getCell(1).value = name; row.getCell(2).value = budget; row.getCell(2).numFmt = NUM;
+      vals.forEach((v, i) => {
+        const c = 3 + i * 3, L = col(c - 1);
+        row.getCell(c).value = v; row.getCell(c).numFmt = NUM;
+        const pc = row.getCell(c + 1); pc.value = { formula: `IFERROR(${L}${r}/$B${r},"N/A")`, result: budget ? (v || 0) / budget : 'N/A' }; pc.numFmt = PCT;
+        const a = assess && assess[i]; if (a && FILLS[a.status]) fill(pc, FILLS[a.status]);
+        const pi = prevIdx(i); const dc = row.getCell(c + 2);
+        if (sts[i].fyMonth === 1) { dc.value = { formula: `${L}${r}`, result: v }; }
+        else if (pi >= 0) { const PL = col(3 + pi * 3 - 1); dc.value = { formula: `${L}${r}-${PL}${r}`, result: (v || 0) - (vals[pi] || 0) }; }
+        else dc.value = 'n/a';
+        dc.numFmt = NUM;
+      });
+      return r++;
+    };
+    secHead('Operating Income');
+    const i0 = r; m.rows.income.forEach((x) => writeLine(x.name, x.budget, x.cells.map((c) => c.ytd), x.cells.map((c) => c.assess))); const i1 = r - 1;
+    const totInc = r; const writeTotal = (label, a, b, resultKey) => {
+      const row = ws.getRow(r); row.getCell(1).value = label; row.font = { bold: true };
+      const tb = (sts[sts.length - 1].totals[resultKey] || {}).budget;
+      row.getCell(2).value = { formula: `SUM(B${a}:B${b})`, result: tb }; row.getCell(2).numFmt = NUM;
+      sts.forEach((s, i) => { const c = 3 + i * 3, L = col(c - 1); const t = s.totals[resultKey] || {};
+        row.getCell(c).value = { formula: `SUM(${L}${a}:${L}${b})`, result: t.actual }; row.getCell(c).numFmt = NUM;
+        row.getCell(c + 1).value = { formula: `IFERROR(${L}${r}/$B${r},"N/A")`, result: t.budget ? t.actual / t.budget : 'N/A' }; row.getCell(c + 1).numFmt = PCT;
+        const pi = prevIdx(i); const dc = row.getCell(c + 2);
+        if (s.fyMonth === 1) dc.value = { formula: `${L}${r}`, result: t.actual }; else if (pi >= 0) { const PL = col(3 + pi * 3 - 1); dc.value = { formula: `${L}${r}-${PL}${r}`, result: t.actual - ((sts[pi].totals[resultKey] || {}).actual || 0) }; } else dc.value = 'n/a';
+        dc.numFmt = NUM; });
+      row.eachCell((c) => { c.border = { top: { style: 'thin' } }; c.font = { bold: true }; });
+      return r++;
+    };
+    writeTotal('Total Income', i0, i1, 'income');
+    r++; secHead('Operating Expenses');
+    const e0 = r; m.rows.expense.forEach((x) => writeLine(x.name, x.budget, x.cells.map((c) => c.ytd), x.cells.map((c) => c.assess))); const e1 = r - 1;
+    const totExp = writeTotal('Total Expenses', e0, e1, 'expense');
+    r++;
+    { const row = ws.getRow(r); row.getCell(1).value = 'Net Operating Income (Loss)'; row.font = { bold: true };
+      row.getCell(2).value = { formula: `B${totInc}-B${totExp}`, result: (sts[sts.length - 1].totals.net || {}).budget }; row.getCell(2).numFmt = NUM;
+      sts.forEach((s, i) => { const c = 3 + i * 3, L = col(c - 1); row.getCell(c).value = { formula: `${L}${totInc}-${L}${totExp}`, result: (s.totals.net || {}).actual }; row.getCell(c).numFmt = NUM; });
+      row.eachCell((c) => { c.font = { bold: true }; });
+      r += 2; }
+    if (m.nonOp.length) { secHead(`Non-Operating Items (FY ${fy})`); m.nonOp.forEach((x) => { const row = ws.getRow(r++); row.getCell(1).value = x.name; x.cells.forEach((v, i) => { row.getCell(3 + i * 3).value = v; row.getCell(3 + i * 3).numFmt = NUM; }); }); r++; }
+    if (opts.banks === false || !m.banks.length) continue;
+    secHead('Bank Accounts');
+    const b0 = r; m.banks.forEach((x) => { const row = ws.getRow(r++); row.getCell(1).value = x.name; x.cells.forEach((v, i) => { row.getCell(3 + i * 3).value = v; row.getCell(3 + i * 3).numFmt = NUM; }); });
+    { const row = ws.getRow(r++); row.getCell(1).value = 'Total cash'; row.font = { bold: true }; sts.forEach((s, i) => { const L = col(3 + i * 3 - 1); row.getCell(3 + i * 3).value = { formula: `SUM(${L}${b0}:${L}${r - 2})`, result: C.bankTotal(s.banks[0]) }; row.getCell(3 + i * 3).numFmt = NUM; }); row.eachCell((c) => { c.font = { bold: true }; }); }
+  }
+
+  // Bank balances over time
+  if (opts.banks !== false) {
+  const wsb = wb.addWorksheet('Bank balances', { views: [{ state: 'frozen', ySplit: 1 }] });
+  const accts = []; statements.forEach((s) => (s.banks[0] ? s.banks[0].accounts : []).forEach((a) => { if (!accts.includes(a.name)) accts.push(a.name); }));
+  wsb.addRow(['As of', 'Fiscal year', ...accts, 'Total']).font = { bold: true };
+  statements.forEach((s) => { const b = s.banks[0]; wsb.addRow([s.periodEnd, s.fy, ...accts.map((n) => { const a = b && b.accounts.find((x) => x.name === n); return a ? a.value : null; }), C.bankTotal(b)]); });
+  for (let i = 0; i < accts.length + 3; i++) { const c = wsb.getColumn(i + 1); c.width = i < 2 ? 13 : 18; if (i >= 2) c.numFmt = NUM; }
+  }
+
+  // Long data
+  const wsl = wb.addWorksheet('All statement lines', { views: [{ state: 'frozen', ySplit: 1 }] });
+  longRows(statements, opts).forEach((row, i) => { const rr = wsl.addRow(row); if (i === 0) rr.font = { bold: true }; });
+  for (let i = 0; i < 11; i++) { const c = wsl.getColumn(i + 1); c.width = [12, 11, 9, 18, 40][i] || 15; if (i >= 5) c.numFmt = NUM; }
+  wsl.autoFilter = { from: 'A1', to: 'K1' };
+
+  // Notes
+  const wsn = wb.addWorksheet(opts.board ? 'Board summaries' : 'Notes & summaries');
+  wsn.addRow(opts.board ? ['Period end', 'Summary for the board'] : ['Period end', 'Summary for the board', 'Treasurer notes', 'Statement file', 'Data checks']).font = { bold: true };
+  statements.forEach((s) => wsn.addRow(opts.board ? [s.periodEnd, s.narrative || ''] : [s.periodEnd, s.narrative || '', s.notes || '', (s.source && s.source.fileName) || '', (s.warnings || []).map((w) => w.msg).join('\n')]));
+  for (let i = 0; i < 5; i++) { const c = wsn.getColumn(i + 1); c.width = [12, 70, 50, 40, 60][i]; c.alignment = { wrapText: true, vertical: 'top' }; }
+  return wb.xlsx.writeBuffer();
+}
+
+</script>
+<script>
+const B = { data: null, fy: null, timer: null };
+const IDLE = 30 * 60 * 1000;
+
+async function fetchBoard() {
+  let r;
+  try { r = await fetch('board/data.json?t=' + Date.now(), { cache: 'no-store' }); }
+  catch (e) { throw new Error("Couldn't reach the site. Check your internet connection."); }
+  if (r.status === 404) throw new Error("The board view isn't published right now. Ask the treasurer.");
+  if (!r.ok) throw new Error('The site returned an error (' + r.status + '). Try again shortly.');
+  return r.json();
+}
+$('bGate').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = $('bBtn'); btn.disabled = true; btn.textContent = 'Opening…'; $('bErr').textContent = '';
+  try {
+    const file = await fetchBoard();
+    if (!file || file.format !== 'lakeside-board') throw new Error("The board view file isn't in the expected format.");
+    const key = await deriveKey($('bPass').value, file.salt, file.iter || ITER);
+    try { B.data = await unseal(key, file.data, 'board-data'); }
+    catch (err) { throw new Error("That password doesn't open the board view. It may have been changed; ask the treasurer."); }
+    $('bPass').value = '';
+    show('gate', false); show('app'); arm(); render();
+  } catch (err) { $('bErr').textContent = err.message; }
+  finally { btn.disabled = false; btn.textContent = 'View the books'; }
+});
+function lockBoard(msg) {
+  B.data = null; $('ledgerTable').innerHTML = ''; $('bSumm').innerHTML = ''; $('bKpis').innerHTML = '';
+  show('app', false); show('gate'); $('bErr').textContent = msg || ''; clearTimeout(B.timer);
+}
+function arm() { clearTimeout(B.timer); if (B.data) B.timer = setTimeout(() => lockBoard('Locked after 30 minutes without activity.'), IDLE); }
+['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach((ev) => window.addEventListener(ev, arm, { passive: true }));
+$('bLock').addEventListener('click', () => lockBoard());
+window.addEventListener('pagehide', () => { if (B.data) lockBoard(); });
+
+function render() {
+  const sts = B.data.statements;
+  const latest = sts[sts.length - 1];
+  const pub = new Date(B.data.publishedAt).toLocaleDateString('en-US', { dateStyle: 'medium' });
+  $('bSub').textContent = latest ? `Figures through ${fmtDate(latest.periodEnd)} · updated ${pub}` : `Updated ${pub}`;
+  if (latest) {
+    const T = latest.totals;
+    const cash = C.bankTotal(latest.banks[0]);
+    $('bKpis').innerHTML = `
+      <div class="kpi"><span class="k">Net operating income, YTD</span><span class="v ${T.net && T.net.actual < 0 ? 'neg' : ''}">${money(T.net ? T.net.actual : T.income.actual - T.expense.actual)}</span><span class="s">FY ${esc(fyLabel(latest.fy))}, month ${latest.fyMonth} of 12</span></div>
+      <div class="kpi"><span class="k">Income, YTD</span><span class="v">${money(T.income.actual)}</span><span class="s">${pct(T.income.budget ? T.income.actual / T.income.budget : null)} of ${money(T.income.budget)} budget</span></div>
+      <div class="kpi"><span class="k">Expenses, YTD</span><span class="v">${money(T.expense.actual)}</span><span class="s">${pct(T.expense.budget ? T.expense.actual / T.expense.budget : null)} of ${money(T.expense.budget)} budget</span></div>
+      ${B.data.banks && cash != null ? `<div class="kpi"><span class="k">Cash across accounts</span><span class="v">${money(cash)}</span><span class="s">as of ${esc(fmtDate(latest.periodEnd, 'short'))}</span></div>` : ''}`;
+  }
+  const fys = C.fiscalYears(sts);
+  if (!B.fy || !fys.includes(B.fy)) B.fy = fys[0] || null;
+  $('yearTabs').innerHTML = yearTabsHTML(fys, B.fy);
+  $('ledgerTable').innerHTML = ledgerHTML(sts, B.fy, { banks: B.data.banks });
+  const summ = [...sts].reverse().filter((s) => s.narrative && s.narrative.trim());
+  show('bSummWrap', B.data.summaries && summ.length > 0);
+  $('bSumm').innerHTML = summ.map((s) => `<article class="card stack" style="gap:8px"><span class="eyebrow">Through ${esc(fmtDate(s.periodEnd))}</span><p style="white-space:pre-wrap;max-width:75ch">${esc(s.narrative.trim())}</p></article>`).join('');
+}
+$('yearTabs').addEventListener('click', (e) => { const b = e.target.closest('[data-fy]'); if (b) { B.fy = b.dataset.fy; render(); } });
+$('bXlsx').addEventListener('click', async () => {
+  const btn = $('bXlsx'); btn.disabled = true; btn.textContent = 'Building…';
+  try {
+    const buf = await buildWorkbook(B.data.statements, { banks: B.data.banks, board: true });
+    const last = B.data.statements[B.data.statements.length - 1];
+    await saveFile(`Lakeside Preschool budget through ${last ? last.periodEnd : 'latest'}.xlsx`, new Blob([buf]));
+  } catch (e) { toast(e.message, 6000); }
+  finally { btn.disabled = false; btn.textContent = 'Download Excel workbook'; }
+});
+
+</script>
+</body>
+</html>

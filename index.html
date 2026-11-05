@@ -176,6 +176,10 @@ td.n, th.n { text-align: right; white-space: nowrap; }
 .yeartabs button[aria-pressed="true"] { background: var(--lake-soft); border-color: var(--lake); color: var(--lake); }
 ol.steps { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 8px; }
 .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--paper); padding: .6rem 1rem; border-radius: 6px; font-size: .9rem; z-index: 20; max-width: calc(100% - 32px); }
+input.amt { width: 7.5rem; text-align: right; font-variant-numeric: tabular-nums; padding: .3rem .5rem; }
+input.amt.bad { border-color: var(--bad); background: var(--bad-bg); }
+.field { display: flex; flex-direction: column; }
+code { font-size: .88em; background: var(--info-bg); padding: .05rem .3rem; border-radius: 4px; }
 .inline-confirm { display: inline-flex; gap: 6px; align-items: center; font-size: .85rem; }
 @media (max-width: 600px) {
   .pace-row { grid-template-columns: 90px 1fr 48px; }
@@ -208,7 +212,7 @@ ol.steps { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: colum
 
     <form id="connectForm" class="stack hidden" autocomplete="off">
       <p class="sub">Connect to the private GitHub repository that holds the encrypted books. The setup guide in the README explains where these come from.</p>
-      <div><label for="cRepo">Data repository</label><input id="cRepo" type="text" placeholder="lakeside-treasury/lakeside-treasury-data" spellcheck="false" autocapitalize="off" required></div>
+      <div><label for="cRepo">Data repository</label><input id="cRepo" type="text" placeholder="lakeside-preschool-treasury/lakeside-treasury-data" spellcheck="false" autocapitalize="off" required></div>
       <div><label for="cToken">GitHub access token</label><input id="cToken" type="password" placeholder="github_pat_…" spellcheck="false" autocomplete="off" required></div>
       <div><label for="cPass">Treasury passphrase</label><input id="cPass" type="password" autocomplete="current-password" required>
         <div class="meter hidden" id="cMeterWrap" style="margin-top:6px"><i id="setupMeter"></i></div></div>
@@ -239,6 +243,8 @@ ol.steps { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: colum
         <a href="#brief" data-view="brief">Brief</a>
         <a href="#statements" data-view="statements">Statements</a>
         <a href="#ledger" data-view="ledger">Spreadsheet</a>
+        <a href="#budget" data-view="budget">Budget</a>
+        <a href="#board" data-view="board">Board view</a>
         <a href="#handoff" data-view="handoff">Handoff &amp; security</a>
       </nav>
       <span class="lockpill"><i></i>Unlocked</span>
@@ -301,6 +307,65 @@ ol.steps { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: colum
       <div class="tablewrap"><table class="ledger" id="ledgerTable"></table></div>
     </section>
 
+    <!-- BUDGET -->
+    <section id="view-budget" class="stack hidden" data-v="budget">
+      <h1>Annual budget</h1>
+      <p class="hint" style="max-width:70ch">Enter the budget the board approved for each fiscal year. Once saved, it replaces the budget column from the bookkeeper's statements in the brief, the spreadsheet, the Excel workbook and the board view. Lines where the two disagree are flagged on the brief.</p>
+      <div class="row" style="align-items:end">
+        <div class="field" style="min-width:300px"><label for="budFy">Fiscal year</label><select id="budFy"></select></div>
+        <span id="budStatus" class="chip"></span>
+      </div>
+      <div class="card stack">
+        <div class="row" style="align-items:end">
+          <div class="field"><label for="budApproved">Approved by the board on</label><input type="date" id="budApproved"></div>
+          <div class="field" style="flex:1;min-width:240px"><label for="budNote">Note</label><input type="text" id="budNote" placeholder="e.g. Approved at the June board meeting; tuition revised after fall enrollment"></div>
+        </div>
+        <div class="row"><span class="hint">Start from:</span><button type="button" id="budFillStmt">Statement budget</button><button type="button" id="budFillLy">Last year's budget</button><button type="button" id="budFillActual">Last year's actuals</button></div>
+        <p class="hint">Enter whole dollars. Tuition remission and tuition assistance are negative, because they reduce income.</p>
+        <div class="tablewrap"><table class="ledger" id="budTable"></table></div>
+        <p class="hint" id="budHint"></p>
+        <div class="err" id="budErr"></div>
+        <div class="row spread">
+          <span id="budClearWrap"></span>
+          <div class="row"><button type="button" id="budClear" class="ghost danger hidden">Remove approved budget</button><button type="button" id="budSave" class="primary">Save budget</button></div>
+        </div>
+      </div>
+      <div class="card stack hidden" id="budHistWrap"><h2>Earlier versions</h2><p class="hint">Each save keeps the previous version here, so a mid-year revision never loses the original.</p><div style="overflow-x:auto" id="budHist"></div></div>
+    </section>
+
+    <!-- BOARD VIEW -->
+    <section id="view-board" class="stack hidden" data-v="board">
+      <h1>Board view</h1>
+      <p class="hint" style="max-width:70ch">A read-only copy of the running spreadsheet for board members and anyone else who needs to see the numbers. It opens with its own viewer password, so nobody needs the treasury passphrase or a GitHub account.</p>
+      <div class="card stack">
+        <div class="row"><span id="bvStatus" class="chip"></span><span id="bvWhen" class="hint"></span></div>
+        <div id="bvLinkRow" class="row hidden"><b>Link:</b> <a id="bvLink" href="#" target="_blank" rel="noopener"></a><button id="bvCopyLink" type="button">Copy link</button></div>
+      </div>
+      <div class="two">
+        <div class="card stack">
+          <h2>Settings</h2>
+          <div><label for="bvRepo">Publish to repository</label><input id="bvRepo" type="text" spellcheck="false" autocapitalize="off"><div class="hint" style="margin-top:4px">The public repository this site runs from, as owner/name.</div></div>
+          <div><label for="bvPass">Viewer password</label><input id="bvPass" type="password" autocomplete="new-password"></div>
+          <div><label for="bvPass2">Type it again</label><input id="bvPass2" type="password" autocomplete="new-password"></div>
+          <label class="check"><input type="checkbox" id="bvBanks" checked> <span>Include bank balances</span></label>
+          <label class="check"><input type="checkbox" id="bvSumm" checked> <span>Include the summaries for the board</span></label>
+          <p class="hint">Treasurer notes and data checks are never included.</p>
+          <div class="err" id="bvErr"></div>
+          <div class="row"><button type="button" id="bvPublish" class="primary">Publish board view</button><button type="button" id="bvStop" class="danger hidden">Stop sharing</button></div>
+          <span id="bvStopWrap"></span>
+        </div>
+        <div class="card stack">
+          <h2>How it works</h2>
+          <ul class="checks">
+            <li>The board view shows the spreadsheet for every fiscal year, the summaries for the board if you include them, and a button to download the Excel workbook.</li>
+            <li>Once it's published, it updates itself whenever you save a statement, a budget or a board summary. GitHub takes a minute or two to show the change.</li>
+            <li>The copy is encrypted with the viewer password and stored in the public app repository, so anyone with the link still needs the password. Because the encrypted file is public, use a password of 10 or more characters that isn't used anywhere else.</li>
+            <li>Send the link and the password separately. Changing the password locks out the old one at the next update; Stop sharing removes the copy entirely.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
     <!-- HANDOFF -->
     <section id="view-handoff" class="stack hidden" data-v="handoff">
       <h1>Handoff &amp; security</h1>
@@ -311,7 +376,7 @@ ol.steps { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: colum
             <li>The new treasurer makes a free GitHub account, and you invite them to the treasury organization as an <b>Owner</b> (GitHub → the organization → People → Invite member).</li>
             <li>They create their own access token for the data repository (README, step 3) and open this page on their computer.</li>
             <li>Give them the passphrase in person or by phone, never in the same message as anything else.</li>
-            <li>Once they're in, have them change the passphrase below to one only they know.</li>
+            <li>Once they're in, have them change the passphrase below to one only they know. If the board view is shared, they can keep its viewer password or set a new one on the Board view page.</li>
             <li>Then remove yourself from the organization, and delete your own access token on GitHub.</li>
           </ol>
           <h3>Monthly routine</h3>
@@ -319,7 +384,8 @@ ol.steps { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: colum
             <li>When the bookkeeper's statement arrives, open <b>Statements</b> and drop in the PDF.</li>
             <li>Check any data warnings, then save.</li>
             <li>Read the <b>Brief</b>, add your notes, and copy it into the board email.</li>
-            <li>Download the Excel workbook if the board wants the spreadsheet.</li>
+            <li>The board view, if shared, updates itself. Otherwise download the Excel workbook for the board.</li>
+            <li>Each year, when the board approves the new budget, enter it on the <b>Budget</b> page.</li>
             <li>When GitHub emails that your token is about to expire, make a new one and choose "Use a different repository or token" on the unlock screen.</li>
           </ol>
         </div>
@@ -766,7 +832,88 @@ const LakesideCore = (() => {
     return { fy, statements: sts, rows, totals, banks, nonOp };
   }
 
-  return { parseStatement, groupLines, buildBrief, briefToText, yearModel, fiscalYears, assessLine, money, pct, fmtDate, STATUS_LABEL, prevStatement, bankTotal, MON_SHORT };
+
+  // ---------- approved budgets ----------
+  const priorFyOf = (fy) => { const [a, b] = fy.split('-').map(Number); return `${a - 1}-${b - 1}`; };
+  const nextFyOf = (fy) => { const [a, b] = fy.split('-').map(Number); return `${a + 1}-${b + 1}`; };
+  const sumSec = (rows, f) => rows.reduce((a, r) => a + (r[f] || 0), 0);
+
+  // budgets: { 'YYYY-YYYY': { income: {name: amount}, expense: {name: amount}, approvedOn, note } }
+  function withBudgets(statements, budgets) {
+    if (!budgets || !Object.keys(budgets).length) return statements;
+    return statements.map((s) => {
+      const cur = budgets[s.fy], prior = budgets[priorFyOf(s.fy)];
+      if (!cur && !prior) return s;
+      const c = JSON.parse(JSON.stringify(s));
+      const diffs = [];
+      for (const sec of ['income', 'expense']) {
+        for (const r of c[sec]) {
+          if (cur && cur[sec] && Object.prototype.hasOwnProperty.call(cur[sec], r.name)) {
+            const nb = cur[sec][r.name];
+            if ((r.budget || 0) !== nb) diffs.push({ name: r.name, statement: r.budget, approved: nb });
+            r.statementBudget = r.budget;
+            r.budget = nb;
+            r.variance = (r.actual || 0) - nb;
+          }
+          if (prior && prior[sec] && Object.prototype.hasOwnProperty.call(prior[sec], r.name)) r.priorBudget = prior[sec][r.name];
+        }
+      }
+      const T = c.totals;
+      if (cur) {
+        T.income.budget = sumSec(c.income, 'budget'); T.income.variance = T.income.actual - T.income.budget;
+        T.expense.budget = sumSec(c.expense, 'budget'); T.expense.variance = T.expense.actual - T.expense.budget;
+        if (T.net) { T.net.budget = T.income.budget - T.expense.budget; T.net.variance = T.net.actual - T.net.budget; }
+        c.budgetSource = { kind: 'approved', approvedOn: cur.approvedOn || null };
+      }
+      if (prior) {
+        T.income.priorBudget = sumSec(c.income, 'priorBudget');
+        T.expense.priorBudget = sumSec(c.expense, 'priorBudget');
+        if (T.net) T.net.priorBudget = T.income.priorBudget - T.expense.priorBudget;
+      }
+      if (diffs.length) {
+        const ex = diffs.slice(0, 4).map((d) => `${d.name}: statement ${money(d.statement)}, approved ${money(d.approved)}`).join('; ');
+        c.warnings = [...(c.warnings || []), { level: 'info', code: 'budget-override', msg: `Using the approved FY ${s.fy} budget. The bookkeeper's budget column differs on ${diffs.length} line${diffs.length === 1 ? '' : 's'} (${ex}${diffs.length > 4 ? '; …' : ''}). You may want to send the approved figures to the bookkeeper.` }];
+      }
+      return c;
+    });
+  }
+
+  // Lines and reference figures for editing a fiscal year's budget.
+  function budgetWorksheet(statements, budgets, fy) {
+    const sts = statements.filter((s) => s.fy === fy).sort(byPeriod);
+    const latest = sts[sts.length - 1] || null;
+    const pfy = priorFyOf(fy);
+    const prevSts = statements.filter((s) => s.fy === pfy).sort(byPeriod);
+    const prevLatest = prevSts[prevSts.length - 1] || null;
+    const prevFull = prevSts.find((s) => s.fyMonth === 12) || null;
+    const cur = budgets[fy] || null, prior = budgets[pfy] || null;
+    const out = {};
+    for (const sec of ['income', 'expense']) {
+      const names = [];
+      const add = (n) => { if (!names.includes(n)) names.push(n); };
+      if (latest) latest[sec].forEach((r) => add(r.name));
+      if (cur && cur[sec]) Object.keys(cur[sec]).forEach(add);
+      if (!latest && prevLatest) prevLatest[sec].forEach((r) => add(r.name));
+      if (prior && prior[sec]) Object.keys(prior[sec]).forEach(add);
+      if (!names.length) { const any = [...statements].sort(byPeriod).pop(); if (any) any[sec].forEach((r) => add(r.name)); }
+      out[sec] = names.map((name) => {
+        const st = latest ? latest[sec].find((r) => r.name === name) : null;
+        const pst = prevLatest ? prevLatest[sec].find((r) => r.name === name) : null;
+        const pfull = prevFull ? prevFull[sec].find((r) => r.name === name) : null;
+        return {
+          name,
+          approved: cur && cur[sec] && name in cur[sec] ? cur[sec][name] : null,
+          statement: st ? st.budget : null,
+          lastYearBudget: prior && prior[sec] && name in prior[sec] ? prior[sec][name] : (pst ? pst.budget : (st ? st.priorBudget : null)),
+          lastYearActual: pfull ? pfull.actual : null,
+          ytd: st ? st.actual : null,
+        };
+      });
+    }
+    return { fy, rows: out, latest, prevFull, hasStatements: sts.length > 0 };
+  }
+
+  return { withBudgets, budgetWorksheet, priorFyOf, nextFyOf, parseStatement, groupLines, buildBrief, briefToText, yearModel, fiscalYears, assessLine, money, pct, fmtDate, STATUS_LABEL, prevStatement, bankTotal, MON_SHORT };
 })();
 if (typeof module !== 'undefined') module.exports = LakesideCore;
 
@@ -775,9 +922,6 @@ if (typeof module !== 'undefined') module.exports = LakesideCore;
 const C = LakesideCore;
 const $ = (id) => document.getElementById(id);
 const ITER = 600000;
-const CHECK = 'lakeside-vault-ok';
-const IDLE_MS = 20 * 60 * 1000;
-const App = { key: null, meta: null, statements: [], failed: [], store: null, canWrite: null, newVault: false, view: 'brief', briefId: null, ledgerFy: null, queue: [], idleTimer: null };
 
 // ---------- helpers ----------
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -806,6 +950,164 @@ async function unseal(key, rec, aad) {
   const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(rec.iv), additionalData: te.encode(aad) }, key, unb64(rec.ct));
   return JSON.parse(td.decode(pt));
 }
+
+async function saveFile(filename, data) {
+  const blob = data instanceof Blob ? data : new Blob([data], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
+  return true;
+}
+
+// ---------- ledger + workbook ----------
+function yearTabsHTML(fys, current) {
+  return fys.map((fy) => `<button type="button" data-fy="${fy}" aria-pressed="${fy === current}">FY ${esc(fyLabel(fy))}</button>`).join('');
+}
+function ledgerHTML(statements, fy, opts = {}) {
+  if (!fy) return `<tbody><tr><td class="hint">No statements yet.</td></tr></tbody>`;
+  const m = C.yearModel(statements, fy);
+  const sts = m.statements;
+  const head1 = `<tr><th class="name" rowspan="2">Line item</th><th class="n" rowspan="2">Annual budget</th>${sts.map((s) => `<th class="mo" colspan="3">${esc(fmtDate(s.periodEnd, 'month'))}</th>`).join('')}</tr>`;
+  const head2 = `<tr>${sts.map(() => `<th class="n first">YTD</th><th class="n">% bud.</th><th class="n">Change</th>`).join('')}</tr>`;
+  const cellsFor = (cells) => cells.map((c) => {
+    const cls = c.assess && ['over', 'ahead', 'behind', 'met'].includes(c.assess.status) ? 'c-' + c.assess.status : '';
+    return `<td class="n first">${money(c.ytd)}</td><td class="n ${cls}">${pct(c.pct)}</td><td class="n">${c.delta == null ? '—' : money(c.delta, { plus: true })}</td>`;
+  }).join('');
+  const totRow = (label, key) => {
+    const t = m.totals.find((x) => x.key === key).cells;
+    const budget = t[t.length - 1] ? t[t.length - 1].budget : null;
+    return `<tr class="tot"><td class="name">${label}</td><td class="n">${money(budget)}</td>${t.map((c, i) => { const prev = sts[i].fyMonth === 1 ? 0 : (sts.findIndex((x) => x.fyMonth === sts[i].fyMonth - 1) >= 0 ? (t[sts.findIndex((x) => x.fyMonth === sts[i].fyMonth - 1)] || {}).actual : null); return `<td class="n first">${money(c && c.actual)}</td><td class="n">${key !== 'net' && c && c.budget ? pct(c.actual / c.budget) : '—'}</td><td class="n">${prev == null || !c ? '—' : money(c.actual - prev, { plus: true })}</td>`; }).join('')}</tr>`;
+  };
+  const span = 2 + sts.length * 3;
+  const secRow = (t) => `<tr class="sec"><td class="name">${t}</td><td colspan="${span - 1}"></td></tr>`;
+  const lineRows = (rows) => rows.map((r) => `<tr><td class="name">${esc(r.name)}</td><td class="n">${money(r.budget)}</td>${cellsFor(r.cells)}</tr>`).join('');
+  const simpleRows = (rows) => rows.map((r) => `<tr><td class="name">${esc(r.name)}</td><td class="n"></td>${r.cells.map((v) => `<td class="n first">${money(v)}</td><td></td><td></td>`).join('')}</tr>`).join('');
+  const bankTot = `<tr class="tot"><td class="name">Total cash</td><td></td>${sts.map((s) => `<td class="n first">${money(C.bankTotal(s.banks[0]))}</td><td></td><td></td>`).join('')}</tr>`;
+  return `<thead>${head1}${head2}</thead><tbody>
+    ${secRow('Operating income')}${lineRows(m.rows.income)}${totRow('Total income', 'income')}
+    ${secRow('Operating expenses')}${lineRows(m.rows.expense)}${totRow('Total expenses', 'expense')}
+    ${totRow('Net operating income (loss)', 'net')}
+    ${m.nonOp.length ? secRow(`Non-operating items (FY ${esc(fyLabel(m.fy))})`) + simpleRows(m.nonOp) : ''}
+    ${opts.banks === false || !m.banks.length ? '' : secRow('Bank accounts') + simpleRows(m.banks) + bankTot}</tbody>`;
+}
+
+function longRows(statements, opts = {}) {
+  const rows = [['Period end', 'Fiscal year', 'FY month', 'Section', 'Line item', 'YTD actual', 'Annual budget', 'Variance', 'Prior-year YTD', 'Prior-year budget', 'Change since prior statement']];
+  for (const s of statements) {
+    const prev = C.prevStatement(statements, s);
+    for (const sec of ['income', 'expense']) for (const r of s[sec]) {
+      const p = prev ? (prev[sec].find((x) => x.name === r.name) || {}).actual || 0 : 0;
+      const delta = s.fyMonth === 1 ? r.actual : prev ? (r.actual || 0) - p : null;
+      rows.push([s.periodEnd, s.fy, s.fyMonth, sec === 'income' ? 'Operating income' : 'Operating expenses', r.name, r.actual, r.budget, r.variance, r.priorActual, r.priorBudget, delta]);
+    }
+    for (const [k, lbl] of [['income', 'Total Income'], ['expense', 'Total Expenses'], ['net', 'Net Operating Income (Loss)']]) { const t = s.totals[k]; if (t) rows.push([s.periodEnd, s.fy, s.fyMonth, 'Totals', lbl, t.actual, t.budget, t.variance, t.priorActual, t.priorBudget, null]); }
+    const ci = Math.max(0, s.nonOp.years.indexOf(s.fy));
+    for (const r of s.nonOp.rows) rows.push([s.periodEnd, s.fy, s.fyMonth, 'Non-operating', r.name, r.values[ci], null, null, r.values[ci + 1] ?? null, null, null]);
+    if (opts.banks !== false) for (const a of (s.banks[0] ? s.banks[0].accounts : [])) rows.push([s.periodEnd, s.fy, s.fyMonth, 'Bank balance', a.name, a.value, null, null, s.banks[1] ? ((s.banks[1].accounts.find((x) => x.name === a.name) || {}).value ?? null) : null, null, null]);
+  }
+  return rows;
+}
+const csvCell = (v) => (v == null ? '' : /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v));
+const FILLS = { over: 'FFF4CCCC', ahead: 'FFFFEB9C', behind: 'FFFFEB9C', met: 'FFC6EFCE', head: 'FFDCE9EF', sec: 'FFEEF1F3' };
+async function buildWorkbook(statements, opts = {}) {
+  if (typeof ExcelJS === 'undefined') throw new Error("The spreadsheet library didn't load. Reload the page and try again, or use Copy as CSV.");
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'Lakeside Treasury'; wb.created = new Date();
+  const fill = (cell, argb) => { cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb } }; };
+  const NUM = '#,##0;[Red]-#,##0', PCT = '0%';
+  const col = (n) => { let s = ''; n++; while (n) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); } return s; };
+
+  for (const fy of C.fiscalYears(statements)) {
+    const m = C.yearModel(statements, fy); const sts = m.statements;
+    const ws = wb.addWorksheet(fy, { views: [{ state: 'frozen', xSplit: 2, ySplit: 4 }] });
+    ws.getCell('A1').value = `Lakeside Preschool, Inc. — FY ${fy} running statement`; ws.getCell('A1').font = { bold: true, size: 14 };
+    ws.getCell('A2').value = `Built from the bookkeeper's monthly income statements. % of budget is shaded: red = over annual budget, yellow = ahead of (expenses) or behind (income) the expected pace, green = income budget met. Generated ${new Date().toLocaleDateString('en-US')}.`;
+    ws.getCell('A2').font = { italic: true, color: { argb: 'FF5B6B74' } };
+    const hdr = ws.getRow(4);
+    hdr.getCell(1).value = 'Line item'; hdr.getCell(2).value = 'Approved budget';
+    sts.forEach((s, i) => { const c = 3 + i * 3; hdr.getCell(c).value = `YTD actual through ${fmtDate(s.periodEnd, 'short')}`; hdr.getCell(c + 1).value = '% of budget'; hdr.getCell(c + 2).value = 'Change from last report'; });
+    hdr.eachCell((c) => { c.font = { bold: true }; c.alignment = { wrapText: true, vertical: 'middle' }; fill(c, FILLS.head); });
+    hdr.height = 44;
+    ws.getColumn(1).width = 42; ws.getColumn(2).width = 14;
+    sts.forEach((_, i) => { ws.getColumn(3 + i * 3).width = 14; ws.getColumn(4 + i * 3).width = 10; ws.getColumn(5 + i * 3).width = 13; });
+    let r = 5;
+    const secHead = (t) => { const row = ws.getRow(r++); row.getCell(1).value = t; row.getCell(1).font = { bold: true }; for (let c = 1; c <= 2 + sts.length * 3; c++) fill(row.getCell(c), FILLS.sec); };
+    const prevIdx = (i) => sts.findIndex((x) => x.fyMonth === sts[i].fyMonth - 1);
+    const writeLine = (name, budget, vals, assess) => {
+      const row = ws.getRow(r); row.getCell(1).value = name; row.getCell(2).value = budget; row.getCell(2).numFmt = NUM;
+      vals.forEach((v, i) => {
+        const c = 3 + i * 3, L = col(c - 1);
+        row.getCell(c).value = v; row.getCell(c).numFmt = NUM;
+        const pc = row.getCell(c + 1); pc.value = { formula: `IFERROR(${L}${r}/$B${r},"N/A")`, result: budget ? (v || 0) / budget : 'N/A' }; pc.numFmt = PCT;
+        const a = assess && assess[i]; if (a && FILLS[a.status]) fill(pc, FILLS[a.status]);
+        const pi = prevIdx(i); const dc = row.getCell(c + 2);
+        if (sts[i].fyMonth === 1) { dc.value = { formula: `${L}${r}`, result: v }; }
+        else if (pi >= 0) { const PL = col(3 + pi * 3 - 1); dc.value = { formula: `${L}${r}-${PL}${r}`, result: (v || 0) - (vals[pi] || 0) }; }
+        else dc.value = 'n/a';
+        dc.numFmt = NUM;
+      });
+      return r++;
+    };
+    secHead('Operating Income');
+    const i0 = r; m.rows.income.forEach((x) => writeLine(x.name, x.budget, x.cells.map((c) => c.ytd), x.cells.map((c) => c.assess))); const i1 = r - 1;
+    const totInc = r; const writeTotal = (label, a, b, resultKey) => {
+      const row = ws.getRow(r); row.getCell(1).value = label; row.font = { bold: true };
+      const tb = (sts[sts.length - 1].totals[resultKey] || {}).budget;
+      row.getCell(2).value = { formula: `SUM(B${a}:B${b})`, result: tb }; row.getCell(2).numFmt = NUM;
+      sts.forEach((s, i) => { const c = 3 + i * 3, L = col(c - 1); const t = s.totals[resultKey] || {};
+        row.getCell(c).value = { formula: `SUM(${L}${a}:${L}${b})`, result: t.actual }; row.getCell(c).numFmt = NUM;
+        row.getCell(c + 1).value = { formula: `IFERROR(${L}${r}/$B${r},"N/A")`, result: t.budget ? t.actual / t.budget : 'N/A' }; row.getCell(c + 1).numFmt = PCT;
+        const pi = prevIdx(i); const dc = row.getCell(c + 2);
+        if (s.fyMonth === 1) dc.value = { formula: `${L}${r}`, result: t.actual }; else if (pi >= 0) { const PL = col(3 + pi * 3 - 1); dc.value = { formula: `${L}${r}-${PL}${r}`, result: t.actual - ((sts[pi].totals[resultKey] || {}).actual || 0) }; } else dc.value = 'n/a';
+        dc.numFmt = NUM; });
+      row.eachCell((c) => { c.border = { top: { style: 'thin' } }; c.font = { bold: true }; });
+      return r++;
+    };
+    writeTotal('Total Income', i0, i1, 'income');
+    r++; secHead('Operating Expenses');
+    const e0 = r; m.rows.expense.forEach((x) => writeLine(x.name, x.budget, x.cells.map((c) => c.ytd), x.cells.map((c) => c.assess))); const e1 = r - 1;
+    const totExp = writeTotal('Total Expenses', e0, e1, 'expense');
+    r++;
+    { const row = ws.getRow(r); row.getCell(1).value = 'Net Operating Income (Loss)'; row.font = { bold: true };
+      row.getCell(2).value = { formula: `B${totInc}-B${totExp}`, result: (sts[sts.length - 1].totals.net || {}).budget }; row.getCell(2).numFmt = NUM;
+      sts.forEach((s, i) => { const c = 3 + i * 3, L = col(c - 1); row.getCell(c).value = { formula: `${L}${totInc}-${L}${totExp}`, result: (s.totals.net || {}).actual }; row.getCell(c).numFmt = NUM; });
+      row.eachCell((c) => { c.font = { bold: true }; });
+      r += 2; }
+    if (m.nonOp.length) { secHead(`Non-Operating Items (FY ${fy})`); m.nonOp.forEach((x) => { const row = ws.getRow(r++); row.getCell(1).value = x.name; x.cells.forEach((v, i) => { row.getCell(3 + i * 3).value = v; row.getCell(3 + i * 3).numFmt = NUM; }); }); r++; }
+    if (opts.banks === false || !m.banks.length) continue;
+    secHead('Bank Accounts');
+    const b0 = r; m.banks.forEach((x) => { const row = ws.getRow(r++); row.getCell(1).value = x.name; x.cells.forEach((v, i) => { row.getCell(3 + i * 3).value = v; row.getCell(3 + i * 3).numFmt = NUM; }); });
+    { const row = ws.getRow(r++); row.getCell(1).value = 'Total cash'; row.font = { bold: true }; sts.forEach((s, i) => { const L = col(3 + i * 3 - 1); row.getCell(3 + i * 3).value = { formula: `SUM(${L}${b0}:${L}${r - 2})`, result: C.bankTotal(s.banks[0]) }; row.getCell(3 + i * 3).numFmt = NUM; }); row.eachCell((c) => { c.font = { bold: true }; }); }
+  }
+
+  // Bank balances over time
+  if (opts.banks !== false) {
+  const wsb = wb.addWorksheet('Bank balances', { views: [{ state: 'frozen', ySplit: 1 }] });
+  const accts = []; statements.forEach((s) => (s.banks[0] ? s.banks[0].accounts : []).forEach((a) => { if (!accts.includes(a.name)) accts.push(a.name); }));
+  wsb.addRow(['As of', 'Fiscal year', ...accts, 'Total']).font = { bold: true };
+  statements.forEach((s) => { const b = s.banks[0]; wsb.addRow([s.periodEnd, s.fy, ...accts.map((n) => { const a = b && b.accounts.find((x) => x.name === n); return a ? a.value : null; }), C.bankTotal(b)]); });
+  for (let i = 0; i < accts.length + 3; i++) { const c = wsb.getColumn(i + 1); c.width = i < 2 ? 13 : 18; if (i >= 2) c.numFmt = NUM; }
+  }
+
+  // Long data
+  const wsl = wb.addWorksheet('All statement lines', { views: [{ state: 'frozen', ySplit: 1 }] });
+  longRows(statements, opts).forEach((row, i) => { const rr = wsl.addRow(row); if (i === 0) rr.font = { bold: true }; });
+  for (let i = 0; i < 11; i++) { const c = wsl.getColumn(i + 1); c.width = [12, 11, 9, 18, 40][i] || 15; if (i >= 5) c.numFmt = NUM; }
+  wsl.autoFilter = { from: 'A1', to: 'K1' };
+
+  // Notes
+  const wsn = wb.addWorksheet(opts.board ? 'Board summaries' : 'Notes & summaries');
+  wsn.addRow(opts.board ? ['Period end', 'Summary for the board'] : ['Period end', 'Summary for the board', 'Treasurer notes', 'Statement file', 'Data checks']).font = { bold: true };
+  statements.forEach((s) => wsn.addRow(opts.board ? [s.periodEnd, s.narrative || ''] : [s.periodEnd, s.narrative || '', s.notes || '', (s.source && s.source.fileName) || '', (s.warnings || []).map((w) => w.msg).join('\n')]));
+  for (let i = 0; i < 5; i++) { const c = wsn.getColumn(i + 1); c.width = [12, 70, 50, 40, 60][i]; c.alignment = { wrapText: true, vertical: 'top' }; }
+  return wb.xlsx.writeBuffer();
+}
+
+
+const CHECK = 'lakeside-vault-ok';
+const IDLE_MS = 20 * 60 * 1000;
+const App = { key: null, meta: null, statements: [], budgets: {}, board: null, failed: [], budgetFy: null, store: null, canWrite: null, newVault: false, view: 'brief', briefId: null, ledgerFy: null, queue: [], idleTimer: null };
+
 async function newVaultMeta(pass) {
   const salt = b64(crypto.getRandomValues(new Uint8Array(16)));
   const key = await deriveKey(pass, salt, ITER);
@@ -875,8 +1177,21 @@ function githubStore(repo, token) {
     },
     async getMeta() { const t = await getText('vault/meta.json'); return t ? JSON.parse(t) : null; },
     async setMeta(m) { await putText('vault/meta.json', JSON.stringify(m, null, 1) + '\n', 'Update vault settings'); },
-    async list() {
-      const dir = await req('GET', path('statements'));
+    sibling(otherRepo) { return githubStore(otherRepo, token); },
+    async getJSON(p) { const t = await getText(p); return t ? JSON.parse(t) : null; },
+    async putJSON(p, obj, message) { await putText(p, JSON.stringify(obj) + '\n', message); },
+    async putRaw(p, text, message) { await putText(p, text, message); },
+    async delPath(p, message) {
+      if (!shas.has(p)) { const cur = await req('GET', path(p)); if (!cur) return false; shas.set(p, cur.sha); }
+      await req('DELETE', path(p), { message, sha: shas.get(p) });
+      shas.delete(p); return true;
+    },
+    async listBudgets() { return this.listDir('budgets'); },
+    async putBudget(fy, rec) { await putText(`budgets/${fy}.json`, JSON.stringify(rec) + '\n', `Save FY ${fy} budget`); },
+    async delBudget(fy) { await this.delPath(`budgets/${fy}.json`, `Remove FY ${fy} budget`); },
+    async list() { return this.listDir('statements'); },
+    async listDir(dirName) {
+      const dir = await req('GET', path(dirName));
       if (!Array.isArray(dir)) return [];
       const files = dir.filter((f) => f.type === 'file' && /\.json$/.test(f.name));
       const out = [];
@@ -983,7 +1298,7 @@ $('connectForm').addEventListener('submit', async (e) => {
   const repo = $('cRepo').value.trim().replace(/^https?:\/\/github\.com\//, '').replace(/\.git$/, '').replace(/\/+$/, '');
   const token = $('cToken').value.trim(), pass = $('cPass').value;
   $('connectErr').textContent = ''; $('connectErr').classList.remove('note');
-  if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) return ($('connectErr').textContent = 'Enter the repository as owner/name, for example lakeside-treasury/lakeside-treasury-data.');
+  if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) return ($('connectErr').textContent = 'Enter the repository as owner/name, for example lakeside-preschool-treasury/lakeside-treasury-data.');
   const btn = $('connectBtn'); btn.disabled = true; const label = btn.textContent; btn.textContent = 'Checking…';
   try {
     const store = githubStore(repo, token);
@@ -1022,12 +1337,14 @@ $('restoreBtn').addEventListener('click', async () => {
   if (!f || !pass) return ($('restoreErr').textContent = 'Choose the backup file and enter its passphrase.');
   const btn = $('restoreBtn'); btn.disabled = true; btn.textContent = 'Restoring…';
   try {
-    const { meta, key, statements } = await openBackup(await f.text(), pass);
+    const { meta, key, statements, budgets } = await openBackup(await f.text(), pass);
     if (await App.store.getMeta()) throw new Error('This repository already has books. Unlock them and use "Merge backup" instead.');
     await App.store.putReadme();
     await App.store.setMeta(meta);
     App.key = key; App.meta = meta; App.statements = [];
     for (const s of statements) { btn.textContent = `Restoring ${App.statements.length + 1} of ${statements.length}…`; await putStatement(s); }
+    App.budgets = {};
+    for (const [fy, doc] of Object.entries(budgets)) { await App.store.putBudget(fy, await seal(key, doc, 'budget:' + fy)); App.budgets[fy] = doc; }
     const token = $('cToken').value.trim();
     if ($('cRemember').checked && token) await rememberDevice(App.store.repo, token, pass);
     $('restorePass').value = $('cToken').value = $('cPass').value = $('cPass2').value = '';
@@ -1046,8 +1363,15 @@ async function loadAll() {
     try { out.push(await unseal(App.key, rec, aadFor(id))); } catch (e) { failed.push(id); }
   }
   App.statements = out.sort(byPeriod);
+  App.budgets = {};
+  for (const { id, rec } of await App.store.listBudgets()) {
+    try { App.budgets[id] = await unseal(App.key, rec, 'budget:' + id); } catch (e) { failed.push('budget ' + id); }
+  }
+  App.board = null;
+  try { const rec = await App.store.getJSON('vault/board.json'); if (rec) App.board = await unseal(App.key, rec, 'board'); } catch (e) { failed.push('board view settings'); }
   App.failed = failed;
 }
+function effStatements() { return C.withBudgets(App.statements, App.budgets); }
 
 function enterApp() {
   show('gate', false); show('app');
@@ -1056,7 +1380,7 @@ function enterApp() {
   route();
 }
 function lock(reason) {
-  App.key = null; App.store = null; App.statements = []; App.queue = []; App.failed = [];
+  App.key = null; App.store = null; App.statements = []; App.budgets = {}; App.board = null; App.queue = []; App.failed = []; clearTimeout(App.boardTimer);
   $('memo').innerHTML = ''; $('ledgerTable').innerHTML = ''; $('savedTable').innerHTML = ''; $('queue').innerHTML = '';
   show('app', false); show('gate');
   showGate(readDevice() ? 'unlockForm' : 'connectForm', reason || '');
@@ -1068,7 +1392,7 @@ $('lockBtn').addEventListener('click', () => lock());
 window.addEventListener('pagehide', () => { if (App.key) lock(); });
 
 // ---------- routing ----------
-const VIEWS = ['brief', 'statements', 'ledger', 'handoff'];
+const VIEWS = ['brief', 'statements', 'ledger', 'budget', 'board', 'handoff'];
 function route() {
   const v = (location.hash || '').slice(1);
   App.view = VIEWS.includes(v) ? v : 'brief';
@@ -1085,6 +1409,8 @@ function renderAll() {
   renderBrief();
   renderStatements();
   renderLedger();
+  renderBudget();
+  renderBoardPanel();
   $('storageInfo').innerHTML = `Books are stored in <b>${esc(App.store.repo)}</b>. Every save is a commit, so earlier versions stay in the repository's history.`;
 }
 function renderBanners() {
@@ -1112,10 +1438,11 @@ function paceRow(label, value, pace, ly, kind) {
 }
 
 function renderBrief() {
-  const s = currentStatement();
+  const all = effStatements();
+  const s = all.find((x) => x.id === App.briefId) || null;
   show('briefEmpty', !s); show('briefMain', !!s);
   if (!s) return;
-  const b = C.buildBrief(s, App.statements);
+  const b = C.buildBrief(s, all);
   const h = b.headline;
   const netCls = h.net.actual < 0 ? 'neg' : '';
   const vsLy = (now, ly) => (ly == null ? '' : `${money(now - ly, { plus: true })} vs same point last year`);
@@ -1185,30 +1512,24 @@ async function saveField(field, value, noteId) {
   const s = currentStatement(); if (!s) return;
   if ((s[field] || '') === value) { $(noteId).textContent = 'No changes.'; return; }
   const next = { ...s, [field]: value };
-  try { $(noteId).textContent = 'Saving…'; await putStatement(next); $(noteId).textContent = 'Saved and encrypted.'; }
+  try { $(noteId).textContent = 'Saving…'; await putStatement(next); $(noteId).textContent = 'Saved and encrypted.'; if (field === 'narrative') boardAfterChange(); }
   catch (e) { $(noteId).textContent = writeError(e); }
 }
 
 $('copyBrief').addEventListener('click', async () => {
   const s = currentStatement(); if (!s) return;
   const merged = { ...s, narrative: ($('narr') && $('narr').value) || s.narrative, notes: ($('notes') && $('notes').value) || s.notes };
-  const text = C.briefToText(merged, C.buildBrief(s, App.statements));
+  const all = effStatements();
+  const text = C.briefToText(merged, C.buildBrief(all.find((x) => x.id === s.id), all));
   try { await navigator.clipboard.writeText(text); toast('Brief copied. Paste it into your email.'); }
   catch (e) { toast("Couldn't copy automatically. Try again, or use Download."); }
 });
 $('dlBrief').addEventListener('click', async () => {
   const s = currentStatement(); if (!s) return;
   const merged = { ...s, narrative: ($('narr') && $('narr').value) || s.narrative, notes: ($('notes') && $('notes').value) || s.notes };
-  await saveFile(`Lakeside budget brief ${s.id}.txt`, C.briefToText(merged, C.buildBrief(s, App.statements)));
+  const all = effStatements();
+  await saveFile(`Lakeside budget brief ${s.id}.txt`, C.briefToText(merged, C.buildBrief(all.find((x) => x.id === s.id), all)));
 });
-
-async function saveFile(filename, data) {
-  const blob = data instanceof Blob ? data : new Blob([data], { type: 'text/plain;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 30000);
-  return true;
-}
 
 // ---------- statements / import ----------
 const drop = $('drop');
@@ -1289,7 +1610,7 @@ async function saveQueued(qs) {
     catch (e) { toast(writeError(e), 6000); break; }
   }
   renderQueue();
-  if (n) { App.briefId = null; renderAll(); toast(`Saved ${n} statement${n === 1 ? '' : 's'}.`); }
+  if (n) { App.briefId = null; renderAll(); toast(`Saved ${n} statement${n === 1 ? '' : 's'}.`); boardAfterChange(); }
 }
 
 function renderStatements() {
@@ -1313,167 +1634,260 @@ $('savedTable').addEventListener('click', async (e) => {
   if (e.target.closest('[data-delno]')) { renderStatements(); return; }
   const y = e.target.closest('[data-delyes]');
   if (y) {
-    try { await App.store.del(y.dataset.delyes); App.statements = App.statements.filter((s) => s.id !== y.dataset.delyes); renderAll(); toast('Statement deleted.'); }
+    try { await App.store.del(y.dataset.delyes); App.statements = App.statements.filter((s) => s.id !== y.dataset.delyes); renderAll(); toast('Statement deleted.'); boardAfterChange(); }
     catch (err) { toast(writeError(err)); }
   }
 });
 
 // ---------- ledger ----------
 function renderLedger() {
-  const fys = C.fiscalYears(App.statements);
+  const sts = effStatements();
+  const fys = C.fiscalYears(sts);
   if (!App.ledgerFy || !fys.includes(App.ledgerFy)) App.ledgerFy = fys[0] || null;
-  $('yearTabs').innerHTML = fys.map((fy) => `<button type="button" data-fy="${fy}" aria-pressed="${fy === App.ledgerFy}">FY ${esc(fyLabel(fy))}</button>`).join('');
-  if (!App.ledgerFy) { $('ledgerTable').innerHTML = `<tbody><tr><td class="hint">No statements yet.</td></tr></tbody>`; return; }
-  const m = C.yearModel(App.statements, App.ledgerFy);
-  const sts = m.statements;
-  const head1 = `<tr><th class="name" rowspan="2">Line item</th><th class="n" rowspan="2">Annual budget</th>${sts.map((s) => `<th class="mo" colspan="3">${esc(fmtDate(s.periodEnd, 'month'))}</th>`).join('')}</tr>`;
-  const head2 = `<tr>${sts.map(() => `<th class="n first">YTD</th><th class="n">% bud.</th><th class="n">Change</th>`).join('')}</tr>`;
-  const cellsFor = (cells) => cells.map((c) => {
-    const cls = c.assess && ['over', 'ahead', 'behind', 'met'].includes(c.assess.status) ? 'c-' + c.assess.status : '';
-    return `<td class="n first">${money(c.ytd)}</td><td class="n ${cls}">${pct(c.pct)}</td><td class="n">${c.delta == null ? '—' : money(c.delta, { plus: true })}</td>`;
-  }).join('');
-  const totRow = (label, key) => {
-    const t = m.totals.find((x) => x.key === key).cells;
-    const budget = t[t.length - 1] ? t[t.length - 1].budget : null;
-    return `<tr class="tot"><td class="name">${label}</td><td class="n">${money(budget)}</td>${t.map((c, i) => { const prev = sts[i].fyMonth === 1 ? 0 : (sts.findIndex((x) => x.fyMonth === sts[i].fyMonth - 1) >= 0 ? (t[sts.findIndex((x) => x.fyMonth === sts[i].fyMonth - 1)] || {}).actual : null); return `<td class="n first">${money(c && c.actual)}</td><td class="n">${c && c.budget ? pct(c.actual / c.budget) : '—'}</td><td class="n">${prev == null || !c ? '—' : money(c.actual - prev, { plus: true })}</td>`; }).join('')}</tr>`;
-  };
-  const span = 2 + sts.length * 3;
-  const secRow = (t) => `<tr class="sec"><td class="name">${t}</td><td colspan="${span - 1}"></td></tr>`;
-  const lineRows = (rows) => rows.map((r) => `<tr><td class="name">${esc(r.name)}</td><td class="n">${money(r.budget)}</td>${cellsFor(r.cells)}</tr>`).join('');
-  const simpleRows = (rows) => rows.map((r) => `<tr><td class="name">${esc(r.name)}</td><td class="n"></td>${r.cells.map((v) => `<td class="n first">${money(v)}</td><td></td><td></td>`).join('')}</tr>`).join('');
-  const bankTot = `<tr class="tot"><td class="name">Total cash</td><td></td>${sts.map((s) => `<td class="n first">${money(C.bankTotal(s.banks[0]))}</td><td></td><td></td>`).join('')}</tr>`;
-  $('ledgerTable').innerHTML = `<thead>${head1}${head2}</thead><tbody>
-    ${secRow('Operating income')}${lineRows(m.rows.income)}${totRow('Total income', 'income')}
-    ${secRow('Operating expenses')}${lineRows(m.rows.expense)}${totRow('Total expenses', 'expense')}
-    ${totRow('Net operating income (loss)', 'net')}
-    ${m.nonOp.length ? secRow(`Non-operating items (FY ${esc(fyLabel(m.fy))})`) + simpleRows(m.nonOp) : ''}
-    ${secRow('Bank accounts')}${simpleRows(m.banks)}${bankTot}</tbody>`;
+  $('yearTabs').innerHTML = yearTabsHTML(fys, App.ledgerFy);
+  $('ledgerTable').innerHTML = ledgerHTML(sts, App.ledgerFy);
 }
 $('yearTabs').addEventListener('click', (e) => { const b = e.target.closest('[data-fy]'); if (b) { App.ledgerFy = b.dataset.fy; renderLedger(); } });
-
-function longRows() {
-  const rows = [['Period end', 'Fiscal year', 'FY month', 'Section', 'Line item', 'YTD actual', 'Annual budget', 'Variance', 'Prior-year YTD', 'Prior-year budget', 'Change since prior statement']];
-  for (const s of App.statements) {
-    const prev = C.prevStatement(App.statements, s);
-    for (const sec of ['income', 'expense']) for (const r of s[sec]) {
-      const p = prev ? (prev[sec].find((x) => x.name === r.name) || {}).actual || 0 : 0;
-      const delta = s.fyMonth === 1 ? r.actual : prev ? (r.actual || 0) - p : null;
-      rows.push([s.periodEnd, s.fy, s.fyMonth, sec === 'income' ? 'Operating income' : 'Operating expenses', r.name, r.actual, r.budget, r.variance, r.priorActual, r.priorBudget, delta]);
-    }
-    for (const [k, lbl] of [['income', 'Total Income'], ['expense', 'Total Expenses'], ['net', 'Net Operating Income (Loss)']]) { const t = s.totals[k]; if (t) rows.push([s.periodEnd, s.fy, s.fyMonth, 'Totals', lbl, t.actual, t.budget, t.variance, t.priorActual, t.priorBudget, null]); }
-    const ci = Math.max(0, s.nonOp.years.indexOf(s.fy));
-    for (const r of s.nonOp.rows) rows.push([s.periodEnd, s.fy, s.fyMonth, 'Non-operating', r.name, r.values[ci], null, null, r.values[ci + 1] ?? null, null, null]);
-    for (const a of (s.banks[0] ? s.banks[0].accounts : [])) rows.push([s.periodEnd, s.fy, s.fyMonth, 'Bank balance', a.name, a.value, null, null, s.banks[1] ? ((s.banks[1].accounts.find((x) => x.name === a.name) || {}).value ?? null) : null, null, null]);
-  }
-  return rows;
-}
-const csvCell = (v) => (v == null ? '' : /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v));
 $('copyCsv').addEventListener('click', async () => {
-  const rows = longRows().filter((r, i) => i === 0 || r[1] === App.ledgerFy);
+  const rows = longRows(effStatements()).filter((r, i) => i === 0 || r[1] === App.ledgerFy);
   try { await navigator.clipboard.writeText(rows.map((r) => r.map(csvCell).join(',')).join('\n')); toast(`FY ${fyLabel(App.ledgerFy)} copied as CSV.`); }
   catch (e) { toast("Couldn't copy automatically."); }
 });
-
-const FILLS = { over: 'FFF4CCCC', ahead: 'FFFFEB9C', behind: 'FFFFEB9C', met: 'FFC6EFCE', head: 'FFDCE9EF', sec: 'FFEEF1F3' };
-async function buildWorkbook() {
-  if (typeof ExcelJS === 'undefined') throw new Error("The spreadsheet library didn't load. Reload the page and try again, or use Copy as CSV.");
-  const wb = new ExcelJS.Workbook();
-  wb.creator = 'Lakeside Treasury'; wb.created = new Date();
-  const fill = (cell, argb) => { cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb } }; };
-  const NUM = '#,##0;[Red]-#,##0', PCT = '0%';
-  const col = (n) => { let s = ''; n++; while (n) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); } return s; };
-
-  for (const fy of C.fiscalYears(App.statements)) {
-    const m = C.yearModel(App.statements, fy); const sts = m.statements;
-    const ws = wb.addWorksheet(fy, { views: [{ state: 'frozen', xSplit: 2, ySplit: 4 }] });
-    ws.getCell('A1').value = `Lakeside Preschool, Inc. — FY ${fy} running statement`; ws.getCell('A1').font = { bold: true, size: 14 };
-    ws.getCell('A2').value = `Built from the bookkeeper's monthly income statements. % of budget is shaded: red = over annual budget, yellow = ahead of (expenses) or behind (income) the expected pace, green = income budget met. Generated ${new Date().toLocaleDateString('en-US')}.`;
-    ws.getCell('A2').font = { italic: true, color: { argb: 'FF5B6B74' } };
-    const hdr = ws.getRow(4);
-    hdr.getCell(1).value = 'Line item'; hdr.getCell(2).value = 'Approved budget';
-    sts.forEach((s, i) => { const c = 3 + i * 3; hdr.getCell(c).value = `YTD actual through ${fmtDate(s.periodEnd, 'short')}`; hdr.getCell(c + 1).value = '% of budget'; hdr.getCell(c + 2).value = 'Change from last report'; });
-    hdr.eachCell((c) => { c.font = { bold: true }; c.alignment = { wrapText: true, vertical: 'middle' }; fill(c, FILLS.head); });
-    hdr.height = 44;
-    ws.getColumn(1).width = 42; ws.getColumn(2).width = 14;
-    sts.forEach((_, i) => { ws.getColumn(3 + i * 3).width = 14; ws.getColumn(4 + i * 3).width = 10; ws.getColumn(5 + i * 3).width = 13; });
-    let r = 5;
-    const secHead = (t) => { const row = ws.getRow(r++); row.getCell(1).value = t; row.getCell(1).font = { bold: true }; for (let c = 1; c <= 2 + sts.length * 3; c++) fill(row.getCell(c), FILLS.sec); };
-    const prevIdx = (i) => sts.findIndex((x) => x.fyMonth === sts[i].fyMonth - 1);
-    const writeLine = (name, budget, vals, assess) => {
-      const row = ws.getRow(r); row.getCell(1).value = name; row.getCell(2).value = budget; row.getCell(2).numFmt = NUM;
-      vals.forEach((v, i) => {
-        const c = 3 + i * 3, L = col(c - 1);
-        row.getCell(c).value = v; row.getCell(c).numFmt = NUM;
-        const pc = row.getCell(c + 1); pc.value = { formula: `IFERROR(${L}${r}/$B${r},"N/A")`, result: budget ? (v || 0) / budget : 'N/A' }; pc.numFmt = PCT;
-        const a = assess && assess[i]; if (a && FILLS[a.status]) fill(pc, FILLS[a.status]);
-        const pi = prevIdx(i); const dc = row.getCell(c + 2);
-        if (sts[i].fyMonth === 1) { dc.value = { formula: `${L}${r}`, result: v }; }
-        else if (pi >= 0) { const PL = col(3 + pi * 3 - 1); dc.value = { formula: `${L}${r}-${PL}${r}`, result: (v || 0) - (vals[pi] || 0) }; }
-        else dc.value = 'n/a';
-        dc.numFmt = NUM;
-      });
-      return r++;
-    };
-    secHead('Operating Income');
-    const i0 = r; m.rows.income.forEach((x) => writeLine(x.name, x.budget, x.cells.map((c) => c.ytd), x.cells.map((c) => c.assess))); const i1 = r - 1;
-    const totInc = r; const writeTotal = (label, a, b, resultKey) => {
-      const row = ws.getRow(r); row.getCell(1).value = label; row.font = { bold: true };
-      const tb = (sts[sts.length - 1].totals[resultKey] || {}).budget;
-      row.getCell(2).value = { formula: `SUM(B${a}:B${b})`, result: tb }; row.getCell(2).numFmt = NUM;
-      sts.forEach((s, i) => { const c = 3 + i * 3, L = col(c - 1); const t = s.totals[resultKey] || {};
-        row.getCell(c).value = { formula: `SUM(${L}${a}:${L}${b})`, result: t.actual }; row.getCell(c).numFmt = NUM;
-        row.getCell(c + 1).value = { formula: `IFERROR(${L}${r}/$B${r},"N/A")`, result: t.budget ? t.actual / t.budget : 'N/A' }; row.getCell(c + 1).numFmt = PCT;
-        const pi = prevIdx(i); const dc = row.getCell(c + 2);
-        if (s.fyMonth === 1) dc.value = { formula: `${L}${r}`, result: t.actual }; else if (pi >= 0) { const PL = col(3 + pi * 3 - 1); dc.value = { formula: `${L}${r}-${PL}${r}`, result: t.actual - ((sts[pi].totals[resultKey] || {}).actual || 0) }; } else dc.value = 'n/a';
-        dc.numFmt = NUM; });
-      row.eachCell((c) => { c.border = { top: { style: 'thin' } }; c.font = { bold: true }; });
-      return r++;
-    };
-    writeTotal('Total Income', i0, i1, 'income');
-    r++; secHead('Operating Expenses');
-    const e0 = r; m.rows.expense.forEach((x) => writeLine(x.name, x.budget, x.cells.map((c) => c.ytd), x.cells.map((c) => c.assess))); const e1 = r - 1;
-    const totExp = writeTotal('Total Expenses', e0, e1, 'expense');
-    r++;
-    { const row = ws.getRow(r); row.getCell(1).value = 'Net Operating Income (Loss)'; row.font = { bold: true };
-      row.getCell(2).value = { formula: `B${totInc}-B${totExp}`, result: (sts[sts.length - 1].totals.net || {}).budget }; row.getCell(2).numFmt = NUM;
-      sts.forEach((s, i) => { const c = 3 + i * 3, L = col(c - 1); row.getCell(c).value = { formula: `${L}${totInc}-${L}${totExp}`, result: (s.totals.net || {}).actual }; row.getCell(c).numFmt = NUM; });
-      row.eachCell((c) => { c.font = { bold: true }; });
-      r += 2; }
-    if (m.nonOp.length) { secHead(`Non-Operating Items (FY ${fy})`); m.nonOp.forEach((x) => { const row = ws.getRow(r++); row.getCell(1).value = x.name; x.cells.forEach((v, i) => { row.getCell(3 + i * 3).value = v; row.getCell(3 + i * 3).numFmt = NUM; }); }); r++; }
-    secHead('Bank Accounts');
-    const b0 = r; m.banks.forEach((x) => { const row = ws.getRow(r++); row.getCell(1).value = x.name; x.cells.forEach((v, i) => { row.getCell(3 + i * 3).value = v; row.getCell(3 + i * 3).numFmt = NUM; }); });
-    { const row = ws.getRow(r++); row.getCell(1).value = 'Total cash'; row.font = { bold: true }; sts.forEach((s, i) => { const L = col(3 + i * 3 - 1); row.getCell(3 + i * 3).value = { formula: `SUM(${L}${b0}:${L}${r - 2})`, result: C.bankTotal(s.banks[0]) }; row.getCell(3 + i * 3).numFmt = NUM; }); row.eachCell((c) => { c.font = { bold: true }; }); }
-  }
-
-  // Bank balances over time
-  const wsb = wb.addWorksheet('Bank balances', { views: [{ state: 'frozen', ySplit: 1 }] });
-  const accts = []; App.statements.forEach((s) => (s.banks[0] ? s.banks[0].accounts : []).forEach((a) => { if (!accts.includes(a.name)) accts.push(a.name); }));
-  wsb.addRow(['As of', 'Fiscal year', ...accts, 'Total']).font = { bold: true };
-  App.statements.forEach((s) => { const b = s.banks[0]; wsb.addRow([s.periodEnd, s.fy, ...accts.map((n) => { const a = b && b.accounts.find((x) => x.name === n); return a ? a.value : null; }), C.bankTotal(b)]); });
-  for (let i = 0; i < accts.length + 3; i++) { const c = wsb.getColumn(i + 1); c.width = i < 2 ? 13 : 18; if (i >= 2) c.numFmt = NUM; }
-
-  // Long data
-  const wsl = wb.addWorksheet('All statement lines', { views: [{ state: 'frozen', ySplit: 1 }] });
-  longRows().forEach((row, i) => { const rr = wsl.addRow(row); if (i === 0) rr.font = { bold: true }; });
-  for (let i = 0; i < 11; i++) { const c = wsl.getColumn(i + 1); c.width = [12, 11, 9, 18, 40][i] || 15; if (i >= 5) c.numFmt = NUM; }
-  wsl.autoFilter = { from: 'A1', to: 'K1' };
-
-  // Notes
-  const wsn = wb.addWorksheet('Notes & summaries');
-  wsn.addRow(['Period end', 'Summary for the board', 'Treasurer notes', 'Statement file', 'Data checks']).font = { bold: true };
-  App.statements.forEach((s) => wsn.addRow([s.periodEnd, s.narrative || '', s.notes || '', (s.source && s.source.fileName) || '', s.warnings.map((w) => w.msg).join('\n')]));
-  for (let i = 0; i < 5; i++) { const c = wsn.getColumn(i + 1); c.width = [12, 70, 50, 40, 60][i]; c.alignment = { wrapText: true, vertical: 'top' }; }
-  return wb.xlsx.writeBuffer();
-}
 $('dlXlsx').addEventListener('click', async () => {
   const btn = $('dlXlsx'); btn.disabled = true; btn.textContent = 'Building…';
   try {
     if (!App.statements.length) throw new Error('Add a statement first.');
-    const buf = await buildWorkbook();
+    const buf = await buildWorkbook(effStatements());
     const d = new Date(); await saveFile(`Lakeside Treasury ${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}.xlsx`, new Blob([buf]));
   } catch (e) { toast(e.message, 6000); }
   finally { btn.disabled = false; btn.textContent = 'Download Excel workbook'; }
 });
+
+// ---------- budget ----------
+function parseAmount(v) {
+  const t = String(v ?? '').trim().replace(/[$,\s]/g, '').replace(/^−/, '-');
+  if (t === '') return null;
+  const paren = /^\((.*)\)$/.exec(t);
+  const n = Number(paren ? '-' + paren[1] : t);
+  return Number.isFinite(n) ? Math.round(n) : NaN;
+}
+const fmtAmt = (v) => (v == null ? '' : (v < 0 ? '-' : '') + Math.abs(v).toLocaleString('en-US'));
+function budgetFyOptions() {
+  const fys = new Set([...App.statements.map((s) => s.fy), ...Object.keys(App.budgets)]);
+  const latest = [...fys].sort().pop();
+  if (latest) fys.add(C.nextFyOf(latest));
+  return [...fys].sort().reverse();
+}
+function renderBudget() {
+  const opts = budgetFyOptions();
+  if (!opts.length) { $('budFy').innerHTML = ''; $('budTable').innerHTML = '<tbody><tr><td class="hint">Add a statement first; its line items become the budget lines.</td></tr></tbody>'; return; }
+  if (!App.budgetFy || !opts.includes(App.budgetFy)) {
+    const withSt = opts.filter((fy) => App.statements.some((s) => s.fy === fy));
+    App.budgetFy = withSt[0] || opts[0];
+  }
+  $('budFy').innerHTML = opts.map((fy) => {
+    const b = App.budgets[fy]; const has = App.statements.some((s) => s.fy === fy);
+    const tag = b ? `approved budget${b.approvedOn ? ' ' + fmtDate(b.approvedOn, 'short') : ''}` : has ? "using the statement's budget" : 'not set up yet';
+    return `<option value="${fy}" ${fy === App.budgetFy ? 'selected' : ''}>FY ${esc(fyLabel(fy))} · ${esc(tag)}</option>`;
+  }).join('');
+  fillBudgetEditor();
+}
+function fillBudgetEditor(override) {
+  const fy = App.budgetFy;
+  const ws = C.budgetWorksheet(App.statements, App.budgets, fy);
+  const doc = App.budgets[fy];
+  App.budgetWs = ws;
+  $('budApproved').value = override ? override.approvedOn || '' : doc ? doc.approvedOn || '' : '';
+  $('budNote').value = override ? override.note || '' : doc ? doc.note || '' : '';
+  const st = $('budStatus');
+  st.className = 'chip ' + (doc ? 'met' : 'unbudgeted');
+  st.textContent = doc ? 'Approved budget in use' : ws.hasStatements ? "Using the bookkeeper's budget column" : 'No budget yet';
+  const ro = App.canWrite === false ? 'readonly' : '';
+  const head = `<thead><tr><th class="name">Line item</th><th class="n">Last year's budget</th><th class="n">Last year's actual</th><th class="n">Statement budget</th><th class="n">YTD actual</th><th class="n">Approved budget</th></tr></thead>`;
+  const rows = (sec) => ws.rows[sec].map((r) => {
+    const val = override ? (override[sec] || {})[r.name] : r.approved != null ? r.approved : r.statement;
+    return `<tr><td class="name">${esc(r.name)}</td><td class="n">${money(r.lastYearBudget)}</td><td class="n">${money(r.lastYearActual)}</td><td class="n">${money(r.statement)}</td><td class="n">${money(r.ytd)}</td>
+      <td class="n"><input class="amt" ${ro} type="text" inputmode="decimal" aria-label="${esc(r.name)} approved budget" data-sec="${sec}" data-name="${esc(r.name)}" value="${esc(fmtAmt(val))}"></td></tr>`;
+  }).join('');
+  const sec = (t) => `<tr class="sec"><td class="name">${t}</td><td colspan="5"></td></tr>`;
+  $('budTable').innerHTML = `${head}<tbody>${sec('Operating income')}${rows('income')}<tr class="tot"><td class="name">Total income</td><td colspan="4"></td><td class="n" id="budTotInc"></td></tr>${sec('Operating expenses')}${rows('expense')}<tr class="tot"><td class="name">Total expenses</td><td colspan="4"></td><td class="n" id="budTotExp"></td></tr><tr class="tot"><td class="name">Net operating income</td><td colspan="4"></td><td class="n" id="budTotNet"></td></tr></tbody>`;
+  $('budHint').textContent = ws.prevFull ? '' : `"Last year's actual" needs the June statement for FY ${fyLabel(C.priorFyOf(fy))}.`;
+  updateBudgetTotals();
+  renderBudgetHistory();
+  $('budErr').textContent = '';
+  show('budClear', !!doc && App.canWrite !== false);
+}
+function readBudgetInputs() {
+  const out = { income: {}, expense: {} }; const bad = [];
+  document.querySelectorAll('#budTable input.amt').forEach((inp) => {
+    const v = parseAmount(inp.value);
+    inp.classList.toggle('bad', Number.isNaN(v));
+    if (Number.isNaN(v)) bad.push(inp.dataset.name);
+    out[inp.dataset.sec][inp.dataset.name] = Number.isNaN(v) || v == null ? 0 : v;
+  });
+  return { out, bad };
+}
+function updateBudgetTotals() {
+  const { out } = readBudgetInputs();
+  const inc = Object.values(out.income).reduce((a, b) => a + b, 0), exp = Object.values(out.expense).reduce((a, b) => a + b, 0);
+  if ($('budTotInc')) { $('budTotInc').textContent = money(inc); $('budTotExp').textContent = money(exp); $('budTotNet').textContent = money(inc - exp); $('budTotNet').classList.toggle('neg', inc - exp < 0); }
+}
+function renderBudgetHistory() {
+  const doc = App.budgets[App.budgetFy];
+  const hist = doc && doc.history ? [...doc.history].reverse() : [];
+  show('budHistWrap', hist.length > 0);
+  const tot = (v, sec) => Object.values(v[sec] || {}).reduce((a, b) => a + b, 0);
+  $('budHist').innerHTML = hist.length ? `<table><thead><tr><th>Saved</th><th>Approved on</th><th class="n">Income</th><th class="n">Expenses</th><th>Note</th><th></th></tr></thead><tbody>${hist.map((h, i) => `<tr><td>${esc(fmtDate((h.savedAt || '').slice(0, 10), 'short'))}</td><td>${esc(h.approvedOn ? fmtDate(h.approvedOn, 'short') : '—')}</td><td class="n">${money(tot(h, 'income'))}</td><td class="n">${money(tot(h, 'expense'))}</td><td>${esc(h.note || '')}</td><td><button type="button" class="ghost" data-histload="${hist.length - 1 - i}">Load into editor</button></td></tr>`).join('')}</tbody></table>` : '';
+}
+$('budFy').addEventListener('change', (e) => { App.budgetFy = e.target.value; fillBudgetEditor(); });
+$('budTable').addEventListener('input', (e) => { if (e.target.matches('input.amt')) updateBudgetTotals(); });
+$('budTable').addEventListener('focusout', (e) => { if (e.target.matches('input.amt')) { const v = parseAmount(e.target.value); if (!Number.isNaN(v)) e.target.value = fmtAmt(v); } });
+function fillColumn(key) {
+  const ws = App.budgetWs; if (!ws) return;
+  let n = 0;
+  document.querySelectorAll('#budTable input.amt').forEach((inp) => {
+    const r = ws.rows[inp.dataset.sec].find((x) => x.name === inp.dataset.name);
+    if (r && r[key] != null) { inp.value = fmtAmt(r[key]); n++; }
+  });
+  updateBudgetTotals();
+  toast(n ? `Filled ${n} lines. Review, then Save budget.` : 'Nothing to copy for this year.');
+}
+$('budFillStmt').addEventListener('click', () => fillColumn('statement'));
+$('budFillLy').addEventListener('click', () => fillColumn('lastYearBudget'));
+$('budFillActual').addEventListener('click', () => fillColumn('lastYearActual'));
+$('budHist').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-histload]'); if (!b) return;
+  const h = App.budgets[App.budgetFy].history[+b.dataset.histload];
+  fillBudgetEditor(h); toast('Earlier version loaded. Save budget to make it current again.');
+});
+$('budSave').addEventListener('click', async () => {
+  const { out, bad } = readBudgetInputs();
+  if (bad.length) return ($('budErr').textContent = `These amounts aren't numbers: ${bad.join(', ')}.`);
+  const fy = App.budgetFy, prev = App.budgets[fy];
+  const doc = { fy, income: out.income, expense: out.expense, approvedOn: $('budApproved').value || null, note: $('budNote').value.trim(), savedAt: new Date().toISOString(), history: [] };
+  if (prev) { const { history, ...rest } = prev; doc.history = [...(history || []), rest].slice(-20); }
+  const same = prev && JSON.stringify([prev.income, prev.expense, prev.approvedOn, prev.note]) === JSON.stringify([doc.income, doc.expense, doc.approvedOn, doc.note]);
+  if (same) return toast('No changes to save.');
+  const btn = $('budSave'); btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    await App.store.putBudget(fy, await seal(App.key, doc, 'budget:' + fy));
+    App.budgets[fy] = doc;
+    renderAll();
+    toast(`FY ${fyLabel(fy)} budget saved. The brief, spreadsheet and Excel now use it.`, 5000);
+    boardAfterChange();
+  } catch (e) { $('budErr').textContent = writeError(e); }
+  finally { btn.disabled = false; btn.textContent = 'Save budget'; }
+});
+$('budClear').addEventListener('click', (e) => {
+  const wrap = $('budClearWrap');
+  wrap.innerHTML = `<span class="inline-confirm">Go back to the bookkeeper's budget column for FY ${esc(fyLabel(App.budgetFy))}? <button type="button" class="danger" id="budClearYes">Remove</button><button type="button" id="budClearNo">Keep</button></span>`;
+});
+$('budClearWrap').addEventListener('click', async (e) => {
+  if (e.target.id === 'budClearNo') { $('budClearWrap').innerHTML = ''; return; }
+  if (e.target.id !== 'budClearYes') return;
+  try { await App.store.delBudget(App.budgetFy); delete App.budgets[App.budgetFy]; $('budClearWrap').innerHTML = ''; renderAll(); toast('Approved budget removed.'); boardAfterChange(); }
+  catch (err) { $('budErr').textContent = writeError(err); }
+});
+
+// ---------- board view ----------
+function defaultBoardRepo() {
+  const h = location.hostname;
+  if (/\.github\.io$/i.test(h)) {
+    const owner = h.split('.')[0]; const first = location.pathname.split('/').filter(Boolean)[0];
+    return first && !/\.html?$/i.test(first) ? `${owner}/${first}` : `${owner}/${h}`;
+  }
+  return App.store ? App.store.repo.replace(/-data$/i, '') : '';
+}
+function boardUrl(repo) {
+  if (!repo) return '';
+  const [owner, name] = repo.split('/');
+  if (name.toLowerCase() === `${owner}.github.io`.toLowerCase()) return `https://${owner.toLowerCase()}.github.io/board.html`;
+  return `https://${owner.toLowerCase()}.github.io/${name}/board.html`;
+}
+function renderBoardPanel() {
+  const cfg = App.board;
+  const on = !!(cfg && cfg.enabled);
+  $('bvStatus').className = 'chip ' + (on ? 'met' : '');
+  $('bvStatus').textContent = on ? 'Shared' : 'Not shared';
+  $('bvWhen').textContent = on && cfg.publishedAt ? `Last updated ${new Date(cfg.publishedAt).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}${cfg.publishedThrough ? `, figures through ${fmtDate(cfg.publishedThrough)}` : ''}.` : '';
+  if (!$('bvRepo').value) $('bvRepo').value = (cfg && cfg.repo) || defaultBoardRepo();
+  if (cfg) { $('bvBanks').checked = cfg.banks !== false; $('bvSumm').checked = cfg.summaries !== false; }
+  const url = boardUrl((cfg && cfg.repo) || $('bvRepo').value.trim());
+  show('bvLinkRow', on && !!url);
+  $('bvLink').href = url; $('bvLink').textContent = url;
+  $('bvPublish').textContent = on ? 'Save and update now' : 'Publish board view';
+  show('bvStop', on);
+  $('bvPass').placeholder = cfg && cfg.password ? 'Leave blank to keep the current password' : 'At least 8 characters';
+}
+function boardSnapshot(cfg) {
+  const sts = effStatements().map((s) => ({
+    id: s.id, periodEnd: s.periodEnd, fy: s.fy, fyMonth: s.fyMonth, income: s.income, expense: s.expense, totals: s.totals, nonOp: s.nonOp,
+    banks: cfg.banks ? s.banks : [], narrative: cfg.summaries ? (s.narrative || '') : '', warnings: [], budgetSource: s.budgetSource || null,
+  }));
+  return { org: 'Lakeside Preschool, Inc.', publishedAt: new Date().toISOString(), banks: !!cfg.banks, summaries: !!cfg.summaries, statements: sts };
+}
+async function publishBoard(cfg) {
+  const payload = boardSnapshot(cfg);
+  const salt = b64(crypto.getRandomValues(new Uint8Array(16)));
+  const key = await deriveKey(cfg.password, salt, ITER);
+  const body = { format: 'lakeside-board', v: 1, kdf: 'PBKDF2-SHA256', cipher: 'AES-256-GCM', iter: ITER, salt, data: await seal(key, payload, 'board-data') };
+  try { await App.store.sibling(cfg.repo).putRaw('board/data.json', JSON.stringify(body) + '\n', 'Update board view'); }
+  catch (e) {
+    if (e.status === 404 || e.status === 403) throw new Error(`Couldn't write to ${cfg.repo}. The access token also needs Contents: Read and write on that repository (README, step 3), or the repository name is wrong.`);
+    throw e;
+  }
+  const last = payload.statements[payload.statements.length - 1];
+  return { ...cfg, enabled: true, publishedAt: payload.publishedAt, publishedThrough: last ? last.periodEnd : null };
+}
+async function saveBoardCfg(cfg) {
+  await App.store.putJSON('vault/board.json', await seal(App.key, cfg, 'board'), 'Update board view settings');
+  App.board = cfg;
+}
+function boardAfterChange() {
+  if (!App.board || !App.board.enabled || App.canWrite === false) return;
+  clearTimeout(App.boardTimer);
+  App.boardTimer = setTimeout(async () => {
+    try { const next = await publishBoard(App.board); await saveBoardCfg(next); renderBoardPanel(); toast('Board view updated.'); }
+    catch (e) { toast('Board view not updated: ' + e.message, 7000); }
+  }, 1200);
+}
+$('bvPublish').addEventListener('click', async () => {
+  $('bvErr').textContent = '';
+  const repo = $('bvRepo').value.trim().replace(/^https?:\/\/github\.com\//, '').replace(/\/+$/, '');
+  if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) return ($('bvErr').textContent = 'Enter the app repository as owner/name, for example lakeside-treasury/lakeside-treasury.');
+  if (App.store && repo.toLowerCase() === App.store.repo.toLowerCase()) return ($('bvErr').textContent = "That's the private data repository. Publish to the public app repository instead.");
+  const p1 = $('bvPass').value, p2 = $('bvPass2').value;
+  let password = App.board && App.board.password;
+  if (p1 || !password) {
+    if (p1.length < 8) return ($('bvErr').textContent = 'Use a viewer password of at least 8 characters.');
+    if (p1 !== p2) return ($('bvErr').textContent = "The two passwords don't match.");
+    password = p1;
+  }
+  if (!App.statements.length) return ($('bvErr').textContent = 'Add a statement first.');
+  const btn = $('bvPublish'); btn.disabled = true; btn.textContent = 'Publishing…';
+  try {
+    const cfg = { ...(App.board || {}), repo, password, banks: $('bvBanks').checked, summaries: $('bvSumm').checked };
+    const next = await publishBoard(cfg);
+    await saveBoardCfg(next);
+    $('bvPass').value = $('bvPass2').value = '';
+    renderBoardPanel();
+    toast('Board view published. GitHub takes a minute or two to show it.', 6000);
+  } catch (e) { $('bvErr').textContent = e.message; }
+  finally { btn.disabled = false; renderBoardPanel(); }
+});
+$('bvStop').addEventListener('click', () => {
+  $('bvStopWrap').innerHTML = `<span class="inline-confirm">Remove the board view? Anyone with the link will see "not published". <button type="button" class="danger" id="bvStopYes">Remove</button><button type="button" id="bvStopNo">Keep</button></span>`;
+});
+$('bvStopWrap').addEventListener('click', async (e) => {
+  if (e.target.id === 'bvStopNo') { $('bvStopWrap').innerHTML = ''; return; }
+  if (e.target.id !== 'bvStopYes') return;
+  try {
+    await App.store.sibling(App.board.repo).delPath('board/data.json', 'Remove board view');
+    await saveBoardCfg({ ...App.board, enabled: false });
+    $('bvStopWrap').innerHTML = ''; renderBoardPanel(); toast('Board view removed.');
+  } catch (err) { $('bvErr').textContent = err.message; }
+});
+$('bvCopyLink').addEventListener('click', async () => { try { await navigator.clipboard.writeText($('bvLink').href); toast('Link copied. Send the password separately.'); } catch (e) { toast("Couldn't copy automatically."); } });
 
 // ---------- handoff ----------
 $('cpBtn').addEventListener('click', async () => {
@@ -1487,6 +1901,8 @@ $('cpBtn').addEventListener('click', async () => {
     const sealed = [];
     for (const s of App.statements) { const rec = await seal(key, s, aadFor(s.id)); rec.updatedAt = new Date().toISOString(); sealed.push([s.id, rec]); }
     for (const [id, rec] of sealed) await App.store.put(id, rec);
+    for (const [fy, doc] of Object.entries(App.budgets)) await App.store.putBudget(fy, await seal(key, doc, 'budget:' + fy));
+    if (App.board) await App.store.putJSON('vault/board.json', await seal(key, App.board, 'board'), 'Update board view settings');
     await App.store.setMeta(meta);
     App.meta = meta; App.key = key;
     const dev = readDevice();
@@ -1501,8 +1917,10 @@ $('cpBtn').addEventListener('click', async () => {
 async function makeBackup() {
   const items = [];
   for (const s of App.statements) items.push({ id: s.id, rec: await seal(App.key, s, aadFor(s.id)) });
+  const budgets = [];
+  for (const [fy, doc] of Object.entries(App.budgets)) budgets.push({ fy, rec: await seal(App.key, doc, 'budget:' + fy) });
   const { kdf, cipher, iter, salt, check } = App.meta;
-  return JSON.stringify({ format: 'lakeside-vault', version: 1, exportedAt: new Date().toISOString(), meta: { v: 1, kdf, cipher, iter, salt, check }, items });
+  return JSON.stringify({ format: 'lakeside-vault', version: 2, exportedAt: new Date().toISOString(), meta: { v: 1, kdf, cipher, iter, salt, check }, items, budgets });
 }
 async function openBackup(text, pass) {
   let data; try { data = JSON.parse(text); } catch (e) { throw new Error("That file isn't a Lakeside backup."); }
@@ -1510,7 +1928,9 @@ async function openBackup(text, pass) {
   const key = await keyFromMeta(data.meta, pass).catch(() => { throw new Error("That passphrase doesn't open this backup."); });
   const statements = [];
   for (const it of data.items || []) statements.push(await unseal(key, it.rec, aadFor(it.id)));
-  return { meta: { ...data.meta, updatedAt: new Date().toISOString() }, key, statements };
+  const budgets = {};
+  for (const it of data.budgets || []) budgets[it.fy] = await unseal(key, it.rec, 'budget:' + it.fy);
+  return { meta: { ...data.meta, updatedAt: new Date().toISOString() }, key, statements, budgets };
 }
 $('bkExport').addEventListener('click', async () => {
   const d = new Date(); await saveFile(`lakeside-vault-backup-${d.toISOString().slice(0, 10)}.json`, await makeBackup());
@@ -1524,9 +1944,10 @@ $('bkImport').addEventListener('click', async () => {
   const f = $('bkFile').files[0], pass = $('bkPass').value; $('bkErr').textContent = '';
   if (!f || !pass) return ($('bkErr').textContent = 'Choose the backup file and enter its passphrase.');
   try {
-    const { statements } = await openBackup(await f.text(), pass);
+    const { statements, budgets } = await openBackup(await f.text(), pass);
     let added = 0, skipped = 0;
     for (const s of statements) { if (App.statements.find((x) => x.id === s.id)) { skipped++; continue; } await putStatement(s); added++; }
+    for (const [fy, doc] of Object.entries(budgets)) { if (App.budgets[fy]) continue; await App.store.putBudget(fy, await seal(App.key, doc, 'budget:' + fy)); App.budgets[fy] = doc; added++; }
     $('bkPass').value = ''; renderAll();
     $('bkErr').textContent = '';
     toast(`Added ${added} statement${added === 1 ? '' : 's'}${skipped ? `; ${skipped} already here were left as they are` : ''}.`, 5000);
